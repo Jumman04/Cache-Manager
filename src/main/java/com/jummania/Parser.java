@@ -5,35 +5,45 @@ import java.util.List;
 
 public final class Parser {
 
-    private final Serializer serializer = new Serializer();
-    private final Deserializer deserializer = new Deserializer();
+    private final Serializer2 serializer = new Serializer2();
+    private final Deserializer2 deserializer = new Deserializer2();
 
     void main() {
 
         Company company = createCompany();
 
-        //  for (int i = 0; i < 3; i++) {
-        parse(company);
-        //  }
+        for (int i = 0; i < 3; i++) {
+            parse(company);
+        }
 
     }
 
     void parse(Company company) {
         byte[] binary = serialize(company);
-
-
         deserializer.deserialize(Company.class, new ByteReader(binary));
 
-
+        int limit = 9;
         long start = System.nanoTime();
 
-        for (int i = 0; i < 9; i++) {
-            deserializer.deserialize(Company.class, new ByteReader(binary));
+        for (int i = 0; i < limit; i++) {
+            serialize(company);
         }
 
         long end = System.nanoTime();
 
-        System.out.println((end - start) / 100000.0);
+        System.out.println((end - start) / limit);
+
+        start = System.nanoTime();
+
+        for (int i = 0; i < limit; i++) {
+            deserializer.deserialize(Company.class, new ByteReader(binary));
+        }
+
+        end = System.nanoTime();
+
+        System.out.println((end - start) / limit);
+
+        System.out.println("lenth: " + binary.length);
     }
 
     public byte[] serialize(Object obj) {
