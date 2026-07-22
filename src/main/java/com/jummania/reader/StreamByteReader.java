@@ -1,7 +1,5 @@
-package com.jummania;
+package com.jummania.reader;
 
-
-import com.jummania.interfaces.Reader;
 
 import java.io.DataInputStream;
 import java.io.IOException;

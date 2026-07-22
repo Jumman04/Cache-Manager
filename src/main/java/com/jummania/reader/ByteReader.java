@@ -1,6 +1,4 @@
-package com.jummania;
-
-import com.jummania.interfaces.Reader;
+package com.jummania.reader;
 
 public final class ByteReader implements Reader {
 

@@ -1,6 +1,6 @@
 package com.jummania;
 
-import com.jummania.interfaces.Writer;
+import com.jummania.writer.Writer;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -8,7 +8,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 
-public final class Serializer2 {
+public final class Serializer {
 
     public void serialize(
             Object obj,
@@ -116,57 +116,57 @@ public final class Serializer2 {
             }
 
             // Object
-            FastCache2.CachedField[] fields =
-                    FastCache2.get(clazz);
+            FastCache.CachedField[] fields =
+                    FastCache.get(clazz);
 
-            for (FastCache2.CachedField cached : fields) {
+            for (FastCache.CachedField cached : fields) {
 
                 Field field =
                         cached.field();
 
                 switch (cached.kind()) {
 
-                    case FastCache2.INT ->
+                    case FastCache.INT ->
                             writer.writeInt(
                                     field.getInt(obj)
                             );
 
-                    case FastCache2.LONG ->
+                    case FastCache.LONG ->
                             writer.writeLong(
                                     field.getLong(obj)
                             );
 
-                    case FastCache2.SHORT ->
+                    case FastCache.SHORT ->
                             writer.writeShort(
                                     field.getShort(obj)
                             );
 
-                    case FastCache2.BYTE ->
+                    case FastCache.BYTE ->
                             writer.writeByte(
                                     field.getByte(obj)
                             );
 
-                    case FastCache2.CHAR ->
+                    case FastCache.CHAR ->
                             writer.writeChar(
                                     field.getChar(obj)
                             );
 
-                    case FastCache2.BOOLEAN ->
+                    case FastCache.BOOLEAN ->
                             writer.writeBoolean(
                                     field.getBoolean(obj)
                             );
 
-                    case FastCache2.FLOAT ->
+                    case FastCache.FLOAT ->
                             writer.writeFloat(
                                     field.getFloat(obj)
                             );
 
-                    case FastCache2.DOUBLE ->
+                    case FastCache.DOUBLE ->
                             writer.writeDouble(
                                     field.getDouble(obj)
                             );
 
-                    case FastCache2.STRING ->
+                    case FastCache.STRING ->
                             writer.writeString(
                                     (String) field.get(obj)
                             );

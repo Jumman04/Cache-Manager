@@ -1,4 +1,4 @@
-package com.jummania.interfaces;
+package com.jummania.reader;
 
 import java.io.IOException;
 

@@ -1,6 +1,6 @@
 package com.jummania;
 
-import com.jummania.interfaces.Reader;
+import com.jummania.reader.Reader;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
@@ -8,10 +8,10 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static com.jummania.FastCache2.UNSAFE;
+import static com.jummania.FastCache.UNSAFE;
 
 @SuppressWarnings("unchecked")
-public final class Deserializer2 {
+public final class Deserializer {
 
     public <T> T deserialize(Class<T> clazz, Reader reader) {
         return deserialize0(clazz, reader);
@@ -75,29 +75,29 @@ public final class Deserializer2 {
             // Object
             Object object = UNSAFE.allocateInstance(clazz);
 
-            FastCache2.CachedField[] fields = FastCache2.get(clazz);
+            FastCache.CachedField[] fields = FastCache.get(clazz);
 
-            for (FastCache2.CachedField cached : fields) {
+            for (FastCache.CachedField cached : fields) {
 
                 switch (cached.kind()) {
 
-                    case FastCache2.INT -> cached.field().setInt(object, reader.readInt());
+                    case FastCache.INT -> cached.field().setInt(object, reader.readInt());
 
-                    case FastCache2.LONG -> cached.field().setLong(object, reader.readLong());
+                    case FastCache.LONG -> cached.field().setLong(object, reader.readLong());
 
-                    case FastCache2.SHORT -> cached.field().setShort(object, reader.readShort());
+                    case FastCache.SHORT -> cached.field().setShort(object, reader.readShort());
 
-                    case FastCache2.BYTE -> cached.field().setByte(object, reader.readByte());
+                    case FastCache.BYTE -> cached.field().setByte(object, reader.readByte());
 
-                    case FastCache2.CHAR -> cached.field().setChar(object, reader.readChar());
+                    case FastCache.CHAR -> cached.field().setChar(object, reader.readChar());
 
-                    case FastCache2.BOOLEAN -> cached.field().setBoolean(object, reader.readBoolean());
+                    case FastCache.BOOLEAN -> cached.field().setBoolean(object, reader.readBoolean());
 
-                    case FastCache2.FLOAT -> cached.field().setFloat(object, reader.readFloat());
+                    case FastCache.FLOAT -> cached.field().setFloat(object, reader.readFloat());
 
-                    case FastCache2.DOUBLE -> cached.field().setDouble(object, reader.readDouble());
+                    case FastCache.DOUBLE -> cached.field().setDouble(object, reader.readDouble());
 
-                    case FastCache2.STRING -> cached.field().set(object, reader.readString());
+                    case FastCache.STRING -> cached.field().set(object, reader.readString());
 
                     default -> cached.field().set(object, deserialize0(cached.genericType(), reader));
                 }
@@ -106,14 +106,6 @@ public final class Deserializer2 {
             return (T) object;
 
         } catch (Throwable e) {
-
-            /*
-             * তোমার নতুন policy:
-             * কোনো mismatch / corruption /
-             * version change / error
-             * => null
-             */
-
             return null;
         }
     }

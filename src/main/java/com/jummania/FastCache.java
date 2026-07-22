@@ -7,7 +7,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class FastCache2 {
+public final class FastCache {
 
     static final byte INT = 1;
     static final byte LONG = 2;
@@ -38,11 +38,11 @@ public final class FastCache2 {
         }
     }
 
-    private FastCache2() {
+    private FastCache() {
     }
 
     public static CachedField[] get(Class<?> clazz) {
-        return CACHE.computeIfAbsent(clazz, FastCache2::build);
+        return CACHE.computeIfAbsent(clazz, FastCache::build);
     }
 
     private static CachedField[] build(Class<?> clazz) {

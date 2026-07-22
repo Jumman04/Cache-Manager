@@ -1,10 +1,8 @@
-package com.jummania;
-
-import com.jummania.interfaces.Writer;
+package com.jummania.writer;
 
 import java.nio.charset.StandardCharsets;
 
-public final class ByteBuilder implements Writer {
+public final class ByteWriter implements Writer {
 
     private byte[] data = new byte[256];
     private int size;

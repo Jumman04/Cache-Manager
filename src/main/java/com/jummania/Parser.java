@@ -1,12 +1,15 @@
 package com.jummania;
 
+import com.jummania.reader.ByteReader;
+import com.jummania.writer.ByteWriter;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public final class Parser {
 
-    private final Serializer2 serializer = new Serializer2();
-    private final Deserializer2 deserializer = new Deserializer2();
+    private final Serializer serializer = new Serializer();
+    private final Deserializer deserializer = new Deserializer();
 
     void main() {
 
@@ -47,7 +50,7 @@ public final class Parser {
     }
 
     public byte[] serialize(Object obj) {
-        ByteBuilder sb = new ByteBuilder();
+        ByteWriter sb = new ByteWriter();
         serializer.serialize(obj, sb);
         return sb.toByteArray();
     }

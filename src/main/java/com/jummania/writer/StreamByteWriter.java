@@ -1,7 +1,5 @@
-package com.jummania;
+package com.jummania.writer;
 
-
-import com.jummania.interfaces.Writer;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
