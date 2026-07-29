@@ -14,10 +14,10 @@ public final class Serializer2 {
         if (obj == null) {
             return;
         }
-        serialize0(obj, obj.getClass(), writer);
+        serialize(obj, obj.getClass(), writer);
     }
 
-    private void serialize0(Object obj, Type type, Writer writer) throws Throwable {
+    void serialize(Object obj, Type type, Writer writer) throws Throwable {
 
         if (obj == null) {
             return;
@@ -37,7 +37,7 @@ public final class Serializer2 {
                     if (item == null) {
                         throw new IllegalStateException("Null collection item not supported");
                     }
-                    serialize0(item, itemType, writer);
+                    serialize(item, itemType, writer);
                 }
                 return;
             }
@@ -59,7 +59,7 @@ public final class Serializer2 {
             Class<?> componentType = clazz.getComponentType();
 
             for (int i = 0; i < length; i++) {
-                serialize0(Array.get(obj, i), componentType, writer);
+                serialize(Array.get(obj, i), componentType, writer);
             }
             return;
         }
@@ -91,7 +91,7 @@ public final class Serializer2 {
                 default -> {
                     Object value = cache.getters()[i].invokeExact(obj);
                     if (value != null) {
-                        serialize0(value, cache.types()[i], writer);
+                        serialize(value, cache.types()[i], writer);
                     }
                 }
             }
