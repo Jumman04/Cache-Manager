@@ -1,11 +1,12 @@
 package com.jummania.writer;
 
 
+import java.io.Closeable;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-public final class StreamByteWriter implements Writer {
+public final class StreamByteWriter implements Writer, Closeable {
 
     private final DataOutputStream out;
 
@@ -55,6 +56,7 @@ public final class StreamByteWriter implements Writer {
 
     @Override
     public void writeBytes(byte[] bytes) throws IOException {
+        out.write(bytes.length);
         out.write(bytes);
     }
 
@@ -66,17 +68,10 @@ public final class StreamByteWriter implements Writer {
             return;
         }
 
-        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-
-        writeInt(bytes.length);
-
-        writeBytes(bytes);
+        writeBytes(value.getBytes(StandardCharsets.UTF_8));
     }
 
-    public void flush() throws IOException {
-        out.flush();
-    }
-
+    @Override
     public void close() throws IOException {
         out.close();
     }

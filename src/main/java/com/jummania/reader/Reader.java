@@ -20,7 +20,13 @@ public interface Reader {
 
     double readDouble() throws IOException;
 
+    byte[] readBytes(int length) throws IOException;
+
     String readString(int length) throws IOException;
+
+    default byte[] readBytes() throws IOException {
+        return readBytes(readInt());
+    }
 
     default String readString() throws IOException {
         return readString(readInt());

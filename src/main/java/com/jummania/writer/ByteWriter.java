@@ -97,8 +97,9 @@ public final class ByteWriter implements Writer {
 
         int length = bytes.length;
 
-        ensureCapacity(length);
+        ensureCapacity(length + 4);
 
+        writeInt(length);
         System.arraycopy(bytes, 0, data, size, length);
 
         size += length;
@@ -108,14 +109,11 @@ public final class ByteWriter implements Writer {
     public void writeString(String value) {
 
         if (value == null) {
-            writeInt(-1);
+            writeInt(0);
             return;
         }
 
-        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-
-        writeInt(bytes.length);
-        writeBytes(bytes);
+        writeBytes(value.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

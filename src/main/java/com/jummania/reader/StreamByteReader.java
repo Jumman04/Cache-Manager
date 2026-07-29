@@ -1,11 +1,12 @@
 package com.jummania.reader;
 
 
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-public final class StreamByteReader implements Reader {
+public final class StreamByteReader implements Reader, Closeable {
 
     private final DataInputStream in;
 
@@ -18,6 +19,16 @@ public final class StreamByteReader implements Reader {
     @Override
     public byte readByte() throws IOException {
         return in.readByte();
+    }
+
+    @Override
+    public byte[] readBytes(int length) throws IOException {
+
+        byte[] buffer = getBuffer(length);
+
+        in.readFully(buffer, 0, length);
+
+        return buffer;
     }
 
     @Override
@@ -73,5 +84,10 @@ public final class StreamByteReader implements Reader {
         }
 
         return buffer;
+    }
+
+    @Override
+    public void close() throws IOException {
+        in.close();
     }
 }

@@ -1,0 +1,144 @@
+package com.jummania;
+
+import com.jummania.writer.Writer;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Collection;
+
+public final class Serializer2 {
+
+    public void serialize(Object obj, Writer writer) {
+        if (obj == null) {
+            return;
+        }
+        serialize0(obj, obj.getClass(), writer);
+    }
+
+    private void serialize0(Object obj, Type type, Writer writer) {
+        try {
+            if (obj == null) {
+                return;
+            }
+
+            // Collection<T>
+            if (type instanceof ParameterizedType parameterizedType) {
+                Type rawType = parameterizedType.getRawType();
+
+                if (rawType instanceof Class<?> rawClass && Collection.class.isAssignableFrom(rawClass)) {
+                    Collection<?> collection = (Collection<?>) obj;
+                    writer.writeInt(collection.size());
+
+                    Type itemType = parameterizedType.getActualTypeArguments()[0];
+
+                    for (Object item : collection) {
+                        if (item == null) {
+                            throw new IllegalStateException("Null collection item not supported");
+                        }
+                        serialize0(item, itemType, writer);
+                    }
+                    return;
+                }
+            }
+
+            if (!(type instanceof Class<?> clazz)) {
+                throw new IllegalStateException("Unsupported type: " + type);
+            }
+
+            // Primitive / Wrapper / String
+            if (writePrimitive(clazz, obj, writer)) {
+                return;
+            }
+
+            // Array
+            if (clazz.isArray()) {
+                int length = Array.getLength(obj);
+                writer.writeInt(length);
+                Class<?> componentType = clazz.getComponentType();
+
+                for (int i = 0; i < length; i++) {
+                    serialize0(Array.get(obj, i), componentType, writer);
+                }
+                return;
+            }
+
+            // Collection without generic info
+            if (Collection.class.isAssignableFrom(clazz)) {
+                throw new IllegalStateException("Collection generic type required");
+            }
+
+            // Object
+            FastCache2.FieldCacheMap cache = FastCache2.get(clazz);
+            byte[] kinds = cache.kinds();
+            Type[] types = cache.types();
+            int size = cache.size();
+
+            for (int i = 0; i < size; i++) {
+                byte kind = kinds[i];
+
+                switch (kind) {
+                    case FastCache2.INT -> writer.writeInt((Integer) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.LONG -> writer.writeLong((Long) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.SHORT -> writer.writeShort((Short) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.BYTE -> writer.writeByte((Byte) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.CHAR -> writer.writeChar((Character) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.BOOLEAN -> writer.writeBoolean((Boolean) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.FLOAT -> writer.writeFloat((Float) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.DOUBLE -> writer.writeDouble((Double) FastCache2.getValue(i, obj, cache));
+                    case FastCache2.STRING -> writer.writeString((String) FastCache2.getValue(i, obj, cache));
+                    default -> {
+                        Object value = FastCache2.getValue(i, obj, cache);
+                        if (value != null) {
+                            serialize0(value, types[i], writer);
+                        }
+                    }
+                }
+            }
+
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean writePrimitive(Class<?> clazz, Object obj, Writer writer) throws IOException {
+        if (clazz == Integer.class || clazz == int.class) {
+            writer.writeInt((Integer) obj);
+            return true;
+        }
+        if (clazz == Long.class || clazz == long.class) {
+            writer.writeLong((Long) obj);
+            return true;
+        }
+        if (clazz == Short.class || clazz == short.class) {
+            writer.writeShort((Short) obj);
+            return true;
+        }
+        if (clazz == Byte.class || clazz == byte.class) {
+            writer.writeByte((Byte) obj);
+            return true;
+        }
+        if (clazz == Character.class || clazz == char.class) {
+            writer.writeChar((Character) obj);
+            return true;
+        }
+        if (clazz == Boolean.class || clazz == boolean.class) {
+            writer.writeBoolean((Boolean) obj);
+            return true;
+        }
+        if (clazz == Float.class || clazz == float.class) {
+            writer.writeFloat((Float) obj);
+            return true;
+        }
+        if (clazz == Double.class || clazz == double.class) {
+            writer.writeDouble((Double) obj);
+            return true;
+        }
+        if (clazz == String.class) {
+            writer.writeString((String) obj);
+            return true;
+        }
+        return false;
+    }
+}

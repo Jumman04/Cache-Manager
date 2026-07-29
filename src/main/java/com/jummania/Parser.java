@@ -1,17 +1,19 @@
 package com.jummania;
 
 import com.jummania.reader.ByteReader;
+import com.jummania.reader.Reader;
 import com.jummania.writer.ByteWriter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class Parser {
 
-    private final Serializer serializer = new Serializer();
-    private final Deserializer deserializer = new Deserializer();
+    private final Serializer2 serializer = new Serializer2();
+    private final Deserializer2 deserializer = new Deserializer2();
 
-    void main() {
+    void main() throws IOException {
 
         Company company = createCompany();
 
@@ -128,34 +130,35 @@ public final class Parser {
         return company;
     }
 
-    public class Company {
-
-        public long id;
-        public String name;
-
-        public Address headOffice;
-
-        public Department[] departments;
-
-        public List<Employee> employees;
-    }
-
-    public class Address {
+    public static class Address {
 
         public String country;
         public String city;
         public String street;
         public int zipCode;
+
+        public static Address fromByte(byte[] sb) throws IOException {
+            Reader reader = new ByteReader(sb);
+            Address address = new Address();
+            address.country = reader.readString();
+            address.city = reader.readString();
+            address.street = reader.readString();
+            address.zipCode = reader.readInt();
+            return address;
+
+        }
+
+        public byte[] toByte() {
+            ByteWriter sb = new ByteWriter();
+            sb.writeString(country);
+            sb.writeString(city);
+            sb.writeString(street);
+            sb.writeInt(zipCode);
+            return sb.toByteArray();
+        }
     }
 
-    public class Department {
-
-        public int id;
-        public String name;
-        public boolean active;
-    }
-
-    public class Employee {
+    public static class Employee {
 
         public long id;
         public String name;
@@ -167,17 +170,252 @@ public final class Parser {
         public List<Phone> phones;
 
         public Skill[] skills;
+
+        public static Employee fromByte(byte[] bytes) throws IOException {
+            Reader reader = new ByteReader(bytes);
+
+            Employee employee = new Employee();
+
+            employee.id = reader.readLong();
+            employee.name = reader.readString();
+            employee.age = reader.readInt();
+            employee.salary = reader.readDouble();
+
+            // Address
+            if (reader.readBoolean()) {
+                employee.address = Address.fromByte(reader.readBytes());
+            }
+
+            // Phones
+            int phoneCount = reader.readInt();
+
+            if (phoneCount >= 0) {
+                employee.phones = new ArrayList<>(phoneCount);
+
+                for (int i = 0; i < phoneCount; i++) {
+                    employee.phones.add(Phone.fromByte(reader.readBytes()));
+                }
+            }
+
+            // Skills
+            int skillCount = reader.readInt();
+
+            if (skillCount >= 0) {
+                employee.skills = new Skill[skillCount];
+
+                for (int i = 0; i < skillCount; i++) {
+                    employee.skills[i] = Skill.fromByte(reader.readBytes());
+                }
+            }
+
+            return employee;
+        }
+
+        public byte[] toByte() {
+            ByteWriter sb = new ByteWriter();
+
+            sb.writeLong(id);
+            sb.writeString(name);
+            sb.writeInt(age);
+            sb.writeDouble(salary);
+
+            // Address
+            sb.writeBoolean(address != null);
+            if (address != null) {
+                sb.writeBytes(address.toByte());
+            }
+
+            // Phones
+            if (phones == null) {
+                sb.writeInt(-1);
+            } else {
+                sb.writeInt(phones.size());
+
+                for (Phone phone : phones) {
+                    sb.writeBytes(phone.toByte());
+                }
+            }
+
+            // Skills
+            if (skills == null) {
+                sb.writeInt(-1);
+            } else {
+                sb.writeInt(skills.length);
+
+                for (Skill skill : skills) {
+                    sb.writeBytes(skill.toByte());
+                }
+            }
+
+            return sb.toByteArray();
+        }
     }
 
-    public class Phone {
+    public static class Phone {
 
         public String type;
         public String number;
+
+        public static Phone fromByte(byte[] bytes) throws IOException {
+            Reader reader = new ByteReader(bytes);
+
+            Phone phone = new Phone();
+
+            phone.type = reader.readString();
+            phone.number = reader.readString();
+
+            return phone;
+        }
+
+        public byte[] toByte() {
+            ByteWriter sb = new ByteWriter();
+
+            sb.writeString(type);
+            sb.writeString(number);
+
+            return sb.toByteArray();
+        }
     }
 
-    public class Skill {
+    public static class Skill {
 
         public String name;
         public int level;
+
+        public static Skill fromByte(byte[] bytes) throws IOException {
+            Reader reader = new ByteReader(bytes);
+
+            Skill skill = new Skill();
+
+            skill.name = reader.readString();
+            skill.level = reader.readInt();
+
+            return skill;
+        }
+
+        public byte[] toByte() {
+            ByteWriter sb = new ByteWriter();
+
+            sb.writeString(name);
+            sb.writeInt(level);
+
+            return sb.toByteArray();
+        }
+    }
+
+    public static class Company {
+
+        public long id;
+        public String name;
+
+        public Address headOffice;
+
+        public Department[] departments;
+
+        public List<Employee> employees;
+
+        public static Company fromByte(byte[] bytes) throws IOException {
+            Reader reader = new ByteReader(bytes);
+
+            Company company = new Company();
+
+            company.id = reader.readLong();
+            company.name = reader.readString();
+
+            // Head Office
+            if (reader.readBoolean()) {
+                company.headOffice = Address.fromByte(reader.readBytes());
+            }
+
+            // Departments
+            int departmentCount = reader.readInt();
+
+            if (departmentCount >= 0) {
+                company.departments = new Department[departmentCount];
+
+                for (int i = 0; i < departmentCount; i++) {
+                    company.departments[i] = Department.fromByte(reader.readBytes());
+                }
+            }
+
+            // Employees
+            int employeeCount = reader.readInt();
+
+            if (employeeCount >= 0) {
+                company.employees = new ArrayList<>(employeeCount);
+
+                for (int i = 0; i < employeeCount; i++) {
+                    company.employees.add(Employee.fromByte(reader.readBytes()));
+                }
+            }
+
+            return company;
+        }
+
+        public byte[] toByte() {
+            ByteWriter sb = new ByteWriter();
+
+            sb.writeLong(id);
+            sb.writeString(name);
+
+            // Head Office
+            sb.writeBoolean(headOffice != null);
+            if (headOffice != null) {
+                sb.writeBytes(headOffice.toByte());
+            }
+
+            // Departments
+            if (departments == null) {
+                sb.writeInt(-1);
+            } else {
+                sb.writeInt(departments.length);
+
+                for (Department department : departments) {
+                    sb.writeBytes(department.toByte());
+                }
+            }
+
+            // Employees
+            if (employees == null) {
+                sb.writeInt(-1);
+            } else {
+                sb.writeInt(employees.size());
+
+                for (Employee employee : employees) {
+                    sb.writeBytes(employee.toByte());
+                }
+            }
+
+            return sb.toByteArray();
+        }
+    }
+
+    public static class Department {
+
+        public int id;
+        public String name;
+        public boolean active;
+
+        public static Department fromByte(byte[] bytes) throws IOException {
+            Reader reader = new ByteReader(bytes);
+
+            Department department = new Department();
+
+            department.id = reader.readInt();
+            department.name = reader.readString();
+            department.active = reader.readBoolean();
+
+            return department;
+        }
+
+        public byte[] toByte() {
+            ByteWriter sb = new ByteWriter();
+
+            sb.writeInt(id);
+            sb.writeString(name);
+            sb.writeBoolean(active);
+
+            return sb.toByteArray();
+        }
     }
 }

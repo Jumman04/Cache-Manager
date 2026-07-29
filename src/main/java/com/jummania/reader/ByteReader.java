@@ -15,6 +15,22 @@ public final class ByteReader implements Reader {
     }
 
     @Override
+    public byte[] readBytes(int length) {
+
+        if (length < 0) {
+            return null;
+        }
+
+        byte[] buffer = new byte[length];
+
+        System.arraycopy(data, position, buffer, 0, length);
+
+        position += length;
+
+        return buffer;
+    }
+
+    @Override
     public boolean readBoolean() {
         return readByte() != 0;
     }
