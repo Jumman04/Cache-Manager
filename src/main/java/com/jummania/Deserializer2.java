@@ -14,7 +14,7 @@ public final class Deserializer2 {
 
     public <T> T deserialize(Class<T> clazz, Reader reader) {
         try {
-            return clazz.cast(deserialize0(clazz, reader));
+            return (T) deserialize0(clazz, reader);
         } catch (Throwable e) {
             return null;
         }

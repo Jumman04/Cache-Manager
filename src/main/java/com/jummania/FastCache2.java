@@ -88,7 +88,6 @@ public final class FastCache2 {
                 count++;
             }
 
-            // যদি স্ট্যাটিক বা ফাইনাল ফিল্ড বাদ পড়ার কারণে সাইজ কমে যায়, তবে ট্রিম করে নেওয়া
             if (count != declared.length) {
                 if (USE_VAR_HANDLE) varHandles = Arrays.copyOf(varHandles, count);
                 if (getters != null) getters = Arrays.copyOf(getters, count);
@@ -99,7 +98,7 @@ public final class FastCache2 {
 
             return new FieldCacheMap(varHandles, getters, setters, types, kinds);
 
-        } catch (Throwable e) {
+        } catch (IllegalAccessException e) {
             throw new RuntimeException("Field cache build failed: " + clazz.getName(), e);
         }
     }
@@ -134,13 +133,8 @@ public final class FastCache2 {
         cacheMap.setters[fieldIndex].invoke(instance, value);
     }
 
-    public record FieldCacheMap(
-            VarHandle[] varHandles,
-            MethodHandle[] getters,
-            MethodHandle[] setters,
-            Type[] types,
-            byte[] kinds
-    ) {
+    public record FieldCacheMap(VarHandle[] varHandles, MethodHandle[] getters, MethodHandle[] setters, Type[] types,
+                                byte[] kinds) {
         public int size() {
             return kinds.length;
         }
