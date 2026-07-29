@@ -10,8 +10,9 @@ import java.util.List;
 
 public final class Parser {
 
-    private final Serializer2 serializer = new Serializer2();
-    private final Deserializer2 deserializer = new Deserializer2();
+    private final Serializer serializer = new Serializer();
+    private final Deserializer deserializer = new Deserializer();
+    ByteWriter sb = new ByteWriter();
 
     void main() throws Throwable {
 
@@ -47,13 +48,12 @@ public final class Parser {
         end = System.nanoTime();
 
         System.out.println((end - start) / limit);
-
-        System.out.println("lenth: " + binary.length);
+        System.out.println("lenths: " + binary.length);
     }
 
     public byte[] serialize(Object obj) throws Throwable {
-        ByteWriter sb = new ByteWriter();
-        serializer.serialize(obj, sb);
+        sb.reset();
+        serializer.serialize(obj, Company.class, sb);
         return sb.toByteArray();
     }
 

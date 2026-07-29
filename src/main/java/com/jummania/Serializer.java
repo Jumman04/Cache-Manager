@@ -19,14 +19,14 @@ public final class Serializer {
             return;
         }
 
-        serialize0(
+        serialize(
                 obj,
                 obj.getClass(),
                 writer
         );
     }
 
-    private void serialize0(
+    void serialize(
             Object obj,
             Type type,
             Writer writer
@@ -59,7 +59,7 @@ public final class Serializer {
                             );
                         }
 
-                        serialize0(
+                        serialize(
                                 item,
                                 itemType,
                                 writer
@@ -98,7 +98,7 @@ public final class Serializer {
 
                 for (int i = 0; i < length; i++) {
 
-                    serialize0(
+                    serialize(
                             Array.get(obj, i),
                             componentType,
                             writer
@@ -178,7 +178,7 @@ public final class Serializer {
 
                         if (value != null) {
 
-                            serialize0(
+                            serialize(
                                     value,
                                     cached.genericType(),
                                     writer

@@ -3,10 +3,11 @@ package com.jummania.writer;
 
 import java.io.Closeable;
 import java.io.DataOutputStream;
+import java.io.Flushable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-public final class StreamByteWriter implements Writer, Closeable {
+public final class StreamByteWriter implements Writer, Closeable, Flushable {
 
     private final DataOutputStream out;
 
@@ -74,5 +75,10 @@ public final class StreamByteWriter implements Writer, Closeable {
     @Override
     public void close() throws IOException {
         out.close();
+    }
+
+    @Override
+    public void flush() throws IOException {
+        out.flush();
     }
 }

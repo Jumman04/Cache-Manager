@@ -132,4 +132,8 @@ public final class ByteWriter implements Writer {
 
         return sb.toString();
     }
+
+    public void reset() {
+        size = 0;
+    }
 }
