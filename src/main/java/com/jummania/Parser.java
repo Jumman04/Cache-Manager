@@ -13,7 +13,7 @@ public final class Parser {
     private final Serializer2 serializer = new Serializer2();
     private final Deserializer2 deserializer = new Deserializer2();
 
-    void main() throws IOException {
+    void main() throws Throwable {
 
         Company company = createCompany();
 
@@ -23,11 +23,11 @@ public final class Parser {
 
     }
 
-    void parse(Company company) {
+    void parse(Company company) throws Throwable {
         byte[] binary = serialize(company);
         deserializer.deserialize(Company.class, new ByteReader(binary));
 
-        int limit = 9;
+        int limit = 9999;
         long start = System.nanoTime();
 
         for (int i = 0; i < limit; i++) {
@@ -51,7 +51,7 @@ public final class Parser {
         System.out.println("lenth: " + binary.length);
     }
 
-    public byte[] serialize(Object obj) {
+    public byte[] serialize(Object obj) throws Throwable {
         ByteWriter sb = new ByteWriter();
         serializer.serialize(obj, sb);
         return sb.toByteArray();

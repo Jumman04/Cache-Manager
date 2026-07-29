@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static com.jummania.FastCache2.UNSAFE;
+import static com.jummania.FastCache.UNSAFE;
 
 public final class Deserializer2 {
 
@@ -52,27 +52,27 @@ public final class Deserializer2 {
             FastCache2.FieldCacheMap cache = FastCache2.get(clazz);
 
             Type[] types = cache.types();
-            byte[] kinds = cache.kinds();
             int fieldCount = types.length;
 
             for (int i = 0; i < fieldCount; i++) {
-                Object value;
-                byte kind = kinds[i];
-
+                byte kind = cache.kinds()[i];
                 switch (kind) {
-                    case FastCache2.INT -> value = reader.readInt();
-                    case FastCache2.LONG -> value = reader.readLong();
-                    case FastCache2.SHORT -> value = reader.readShort();
-                    case FastCache2.BYTE -> value = reader.readByte();
-                    case FastCache2.CHAR -> value = reader.readChar();
-                    case FastCache2.BOOLEAN -> value = reader.readBoolean();
-                    case FastCache2.FLOAT -> value = reader.readFloat();
-                    case FastCache2.DOUBLE -> value = reader.readDouble();
-                    case FastCache2.STRING -> value = reader.readString();
-                    default -> value = deserialize0(types[i], reader);
+                    case FastCache2.INT -> cache.setters()[i].invokeExact(object, reader.readInt());
+                    case FastCache2.LONG -> cache.setters()[i].invokeExact(object, reader.readLong());
+                    case FastCache2.SHORT -> cache.setters()[i].invokeExact(object, reader.readShort());
+                    case FastCache2.BYTE -> cache.setters()[i].invokeExact(object, reader.readByte());
+                    case FastCache2.CHAR -> cache.setters()[i].invokeExact(object, reader.readChar());
+                    case FastCache2.BOOLEAN -> cache.setters()[i].invokeExact(object, reader.readBoolean());
+                    case FastCache2.FLOAT -> cache.setters()[i].invokeExact(object, reader.readFloat());
+                    case FastCache2.DOUBLE -> cache.setters()[i].invokeExact(object, reader.readDouble());
+                    case FastCache2.STRING -> cache.setters()[i].invokeExact(object, reader.readString());
+                    default -> {
+                        Object value = deserialize0(cache.types()[i], reader);
+                        if (value != null) {
+                            cache.setters()[i].invokeExact(object, value);
+                        }
+                    }
                 }
-
-                FastCache2.setValue(i, object, cache, value);
             }
 
             return object;
