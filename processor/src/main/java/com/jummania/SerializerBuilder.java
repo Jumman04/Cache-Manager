@@ -32,14 +32,15 @@ class SerializerBuilder {
 
                 String currentAccessor = parentAccessor + "." + fieldName;
 
+
                 if (!write(processingEnv, currentAccessor, fieldType)) {
                     if (isArray(fieldType, typeMirror)) {
                         String componentType = getArrayComponentType(typeMirror);
                         writeArray(processingEnv, componentType, currentAccessor, fieldName, ".length");
-                    } else if (isIterable(processingEnv, typeMirror)) {
+                    } else if (isIterable(processingEnv, typeMirror, fieldType)) {
                         String componentType = getIterableComponentType(typeMirror);
                         writeArray(processingEnv, componentType, currentAccessor, fieldName, ".size()");
-                    } else if (isMap(processingEnv, typeMirror)) {
+                    } else if (isMap(processingEnv, typeMirror, fieldType)) {
                         writeMap(typeMirror, processingEnv, currentAccessor, fieldName);
                     } else throw new RuntimeException("Unknown type: " + fieldType);
                 }
@@ -140,6 +141,7 @@ class SerializerBuilder {
 
         builder.append("            for (").append(componentType).append(" ").append(fieldName).append(" : ").append(currentAccessor).append(") {\n");
 
+        //   System.out.println(componentType);
         if (!write(processingEnv, fieldName, componentType)) {
             throw new RuntimeException("Unknown component type: " + componentType);
         }
@@ -166,13 +168,34 @@ class SerializerBuilder {
         builder.append("                ").append(keyType).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
         builder.append("                ").append(valType).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
 
+        typeMirror = getInnerTypeMirror(processingEnv, keyType);
+        // System.out.println(getInnerTypeMirror(processingEnv, keyType));
+
         if (!write(processingEnv, keyVar, keyType)) {
-            throw new RuntimeException("Unknown key type: " + valType);
+            if (isArray(keyType, typeMirror)) {
+                String componentType = getArrayComponentType(typeMirror);
+                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".length");
+            } else if (isIterable(processingEnv, typeMirror, keyType)) {
+                String componentType = getIterableComponentType(typeMirror);
+                System.out.println(fieldName);
+                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".size()");
+            } else if (isMap(processingEnv, typeMirror, keyType)) {
+                writeMap(typeMirror, processingEnv, currentAccessor, fieldName);
+            } else throw new RuntimeException("Unknown type: " + keyType);
         }
 
         if (!write(processingEnv, valVar, valType)) {
-            throw new RuntimeException("Unknown value type: " + valType);
+            if (isArray(valType, typeMirror)) {
+                String componentType = getArrayComponentType(typeMirror);
+                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".length");
+            } else if (isIterable(processingEnv, typeMirror, valType)) {
+                String componentType = getIterableComponentType(typeMirror);
+                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".size()");
+            } else if (isMap(processingEnv, typeMirror, valType)) {
+                writeMap(typeMirror, processingEnv, currentAccessor, fieldName);
+            } else throw new RuntimeException("Unknown type: " + valType);
         }
+
 
         builder.append("            }\n");
         builder.append("        }\n");

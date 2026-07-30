@@ -133,7 +133,6 @@ public final class Parser {
         return company;
     }
 
-    @MyCustomAnnotation
     public static class Address {
 
         public String country;
@@ -256,7 +255,6 @@ public final class Parser {
         }
     }
 
-    @MyCustomAnnotation
     public static class Phone {
 
         public String type;
@@ -283,7 +281,6 @@ public final class Parser {
         }
     }
 
-    @MyCustomAnnotation
     public static class Skill {
 
         public String name;
@@ -399,7 +396,6 @@ public final class Parser {
         }
     }
 
-    @MyCustomAnnotation
     public static class Department {
 
         public int id;
@@ -431,8 +427,7 @@ public final class Parser {
 
     @MyCustomAnnotation
     class TT {
-        int s;
-        Company address;
-        Map<Object, String> map;
+        //  List<String> testlist;
+        Map<List<List<String>>, List> testmap;
     }
 }
