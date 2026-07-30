@@ -7,6 +7,7 @@ import com.jummania.writer.ByteWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class Parser {
 
@@ -16,8 +17,12 @@ public final class Parser {
 
     void main() throws Throwable {
 
+        if (true) return;
+
         Company company = createCompany();
 
+        System.out.println("lenths: " + serialize(company).length);
+        System.out.println("lenths: " + company.toByte().length);
         for (int i = 0; i < 3; i++) {
             parse(company);
         }
@@ -25,8 +30,6 @@ public final class Parser {
     }
 
     void parse(Company company) throws Throwable {
-        byte[] binary = serialize(company);
-        deserializer.deserialize(Company.class, new ByteReader(binary));
 
         int limit = 9999;
         long start = System.nanoTime();
@@ -42,18 +45,18 @@ public final class Parser {
         start = System.nanoTime();
 
         for (int i = 0; i < limit; i++) {
-            deserializer.deserialize(Company.class, new ByteReader(binary));
+            company.toByte();
         }
 
         end = System.nanoTime();
 
         System.out.println((end - start) / limit);
-        System.out.println("lenths: " + binary.length);
     }
 
-    public byte[] serialize(Object obj) throws Throwable {
+    public byte[] serialize(Company obj) throws Throwable {
         sb.reset();
-        serializer.serialize(obj, Company.class, sb);
+        Company_Serializer.serialize(obj, sb);
+        // serializer.serialize(obj, Company.class, sb);
         return sb.toByteArray();
     }
 
@@ -130,6 +133,7 @@ public final class Parser {
         return company;
     }
 
+    @MyCustomAnnotation
     public static class Address {
 
         public String country;
@@ -158,6 +162,7 @@ public final class Parser {
         }
     }
 
+    @MyCustomAnnotation
     public static class Employee {
 
         public long id;
@@ -303,8 +308,10 @@ public final class Parser {
         }
     }
 
+    @MyCustomAnnotation
     public static class Company {
 
+        // fd
         public long id;
         public String name;
 
@@ -390,6 +397,7 @@ public final class Parser {
         }
     }
 
+    @MyCustomAnnotation
     public static class Department {
 
         public int id;
@@ -417,5 +425,12 @@ public final class Parser {
 
             return sb.toByteArray();
         }
+    }
+
+    @MyCustomAnnotation
+    class TT {
+        int s;
+        Company address;
+        Map<String, String> map;
     }
 }

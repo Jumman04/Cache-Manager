@@ -1,1 +1,2 @@
 rootProject.name = 'Cache-Manager'
+include 'processor'
