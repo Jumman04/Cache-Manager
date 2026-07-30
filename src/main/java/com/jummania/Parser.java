@@ -17,7 +17,7 @@ public final class Parser {
 
     void main() throws Throwable {
 
-        if (true) return;
+        //  if (true) return;
 
         Company company = createCompany();
 
@@ -256,6 +256,7 @@ public final class Parser {
         }
     }
 
+    @MyCustomAnnotation
     public static class Phone {
 
         public String type;
@@ -282,6 +283,7 @@ public final class Parser {
         }
     }
 
+    @MyCustomAnnotation
     public static class Skill {
 
         public String name;

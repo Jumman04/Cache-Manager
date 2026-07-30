@@ -89,10 +89,7 @@ public class MyProcessor extends AbstractProcessor {
                 TypeElement subClassElement = processingEnv.getElementUtils().getTypeElement(fieldType);
 
                 if (subClassElement != null) {
-                    if (hasClass(fieldType)) {
-                        code.append("        if(").append(currentAccessor).append(" == null)").append(" writer.writeInt(0);\n        else ").append(subClassElement.getSimpleName()).append("_Serializer.serialize(").append(currentAccessor).append(", writer);\n");
-                        System.out.println(subClassElement.getSimpleName());
-                    } else write(subClassElement, code, currentAccessor);
+                    writeIfNull(code, subClassElement, currentAccessor, fieldType);
                 } else {
                     if (fieldType.endsWith("[]") || field.asType().getKind().name().equals("ARRAY")) {
                         String componentType = getArrayComponentType(field);
@@ -106,6 +103,13 @@ public class MyProcessor extends AbstractProcessor {
                 }
             }
         }
+    }
+
+    private void writeIfNull(StringBuilder code, TypeElement element, String currentAccessor, String fieldType) {
+        if (hasClass(fieldType)) {
+            code.append("        if(").append(currentAccessor).append(" == null)").append(" writer.writeInt(0);\n        else ").append(element.getSimpleName()).append("_Serializer.serialize(").append(currentAccessor).append(", writer);\n");
+            System.out.println(element.getSimpleName());
+        } else write(element, code, currentAccessor);
     }
 
     private boolean writePrimitive(String fieldName, String fieldType, StringBuilder code) {
@@ -260,7 +264,8 @@ public class MyProcessor extends AbstractProcessor {
         if (!writePrimitive(fieldName, componentType, code)) {
             TypeElement arrayElement = processingEnv.getElementUtils().getTypeElement(componentType);
             if (arrayElement != null) {
-                write(arrayElement, code, fieldName);
+                writeIfNull(code, arrayElement, fieldName, arrayElement.asType().toString());
+                //   write(arrayElement, code, fieldName);
             } else {
                 throw new RuntimeException("Unknown array component type: " + componentType);
             }
@@ -298,7 +303,7 @@ public class MyProcessor extends AbstractProcessor {
             // Value যদি কাস্টম অবজেক্ট হয় (যেমন Map<String, Address>)
             TypeElement valElement = processingEnv.getElementUtils().getTypeElement(valType);
             if (valElement != null) {
-                write(valElement, code, valVar);
+                writeIfNull(code, valElement, valVar, valElement.asType().toString());
             } else {
                 throw new RuntimeException("Unknown Map Value type: " + valType);
             }
