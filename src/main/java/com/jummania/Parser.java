@@ -433,6 +433,6 @@ public final class Parser {
     class TT {
         int s;
         Company address;
-        Map<String, String> map;
+        Map<Object, String> map;
     }
 }
