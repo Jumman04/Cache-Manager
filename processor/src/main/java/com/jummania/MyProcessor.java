@@ -35,37 +35,40 @@ public class MyProcessor extends AbstractProcessor {
             }
         }
 
-        // ২. শুধুমাত্র যখন কম্পাইলেশন রাউন্ড শেষ হবে এবং আগে জেনারেট না হয়ে থাকে
+        // ২. শুধুমাত্র যখন কম্পাইলেশন রাউন্ড শেষ হবে এবং আগে জেনারেট না হয়ে থাকে
         if (roundEnv.processingOver() && !isGenerated && !annotatedClassNames.isEmpty()) {
-            isGenerated = true; // ফ্ল্যাগ অন করে দিলাম যাতে পরের রাউন্ডে আর না ঢোকে
+            isGenerated = true;
+
+            String targetPackage = getClass().getPackageName();
+            String targetClassName = "GeneratedSerializers";
+
+            StringBuilder serializerCode = new StringBuilder();
+            serializerCode.append("package ").append(targetPackage).append(";\n\n");
+            serializerCode.append("public final class ").append(targetClassName).append(" {\n\n");
 
             for (TypeElement element : annotatedClassNames) {
-                String packageName = processingEnv.getElementUtils().getPackageOf(element).getQualifiedName().toString();
-                String className = element.getSimpleName().toString();
-                String generatedClassName = className + "_Serializer";
-
-                StringBuilder code = new StringBuilder();
-                code.append("package ").append(packageName).append(";\n\n");
-                code.append("public final class ").append(generatedClassName).append(" {\n");
                 String fullClass = element.asType().toString();
+                String className = element.getSimpleName().toString();
+
+                String methodName = "serialize";
                 String varName = className.substring(0, 1).toLowerCase() + className.substring(1);
-                code.append("    public static void serialize(").append(fullClass).append(" ").append(varName).append(", com.jummania.writer.Writer writer) throws java.io.IOException {\n");
 
-                // ফিল্ডগুলো লুপ করে স্ট্রিং বিল্ড করা
-                write(element, code, varName);
+                serializerCode.append("    public static void ").append(methodName).append("(").append(fullClass).append(" ").append(varName).append(", com.jummania.writer.Writer writer) throws java.io.IOException {\n");
 
-                code.append("    }\n");
-                code.append("}\n");
+                write(element, serializerCode, varName);
 
-                // Filer দিয়ে ফিজিক্যাল ফাইল রাইট করা
-                try {
-                    JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(packageName + "." + generatedClassName);
-                    try (Writer writer = builderFile.openWriter()) {
-                        writer.write(code.toString());
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                serializerCode.append("    }\n\n");
+            }
+
+            serializerCode.append("}\n");
+
+            try {
+                JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(targetPackage + "." + targetClassName);
+                try (Writer writer = builderFile.openWriter()) {
+                    writer.write(serializerCode.toString());
                 }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 
@@ -89,7 +92,7 @@ public class MyProcessor extends AbstractProcessor {
                 TypeElement subClassElement = processingEnv.getElementUtils().getTypeElement(fieldType);
 
                 if (subClassElement != null) {
-                    writeIfNull(code, subClassElement, currentAccessor, fieldType);
+                    writeIfNull(code, subClassElement, currentAccessor, fieldType, "        ");
                 } else {
                     if (fieldType.endsWith("[]") || field.asType().getKind().name().equals("ARRAY")) {
                         String componentType = getArrayComponentType(field);
@@ -105,82 +108,83 @@ public class MyProcessor extends AbstractProcessor {
         }
     }
 
-    private void writeIfNull(StringBuilder code, TypeElement element, String currentAccessor, String fieldType) {
+    private void writeIfNull(StringBuilder code, TypeElement element, String currentAccessor, String fieldType, String space) {
         if (hasClass(fieldType)) {
-            code.append("        if(").append(currentAccessor).append(" == null)").append(" writer.writeInt(0);\n        else ").append(element.getSimpleName()).append("_Serializer.serialize(").append(currentAccessor).append(", writer);\n");
-            System.out.println(element.getSimpleName());
+            code.append(space).append("if (").append(currentAccessor).append(" == null)").append(" writer.writeInt(0);\n").append(space).append("else ").append("serialize(").append(currentAccessor).append(", writer);\n");
         } else write(element, code, currentAccessor);
     }
 
     private boolean writePrimitive(String fieldName, String fieldType, StringBuilder code) {
 
-        if (fieldType.equals("int") || fieldType.equals("java.lang.Integer")) {
-            code.append("        writer.writeInt(").append(fieldName);
-            if (fieldType.equals("java.lang.Integer")) {
-                code.append(" == null ? 0 : ").append(fieldName);
+        switch (fieldType) {
+            case "int", "java.lang.Integer" -> {
+                code.append("        writer.writeInt(").append(fieldName);
+                if (fieldType.equals("java.lang.Integer")) {
+                    code.append(" == null ? 0 : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("long") || fieldType.equals("java.lang.Long")) {
-            code.append("        writer.writeLong(").append(fieldName);
-            if (fieldType.equals("java.lang.Long")) {
-                code.append(" == null ? 0L : ").append(fieldName);
+            case "long", "java.lang.Long" -> {
+                code.append("        writer.writeLong(").append(fieldName);
+                if (fieldType.equals("java.lang.Long")) {
+                    code.append(" == null ? 0L : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("short") || fieldType.equals("java.lang.Short")) {
-            code.append("        writer.writeShort(").append(fieldName);
-            if (fieldType.equals("java.lang.Short")) {
-                code.append(" == null ? (short) 0 : ").append(fieldName);
+            case "short", "java.lang.Short" -> {
+                code.append("        writer.writeShort(").append(fieldName);
+                if (fieldType.equals("java.lang.Short")) {
+                    code.append(" == null ? (short) 0 : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("byte") || fieldType.equals("java.lang.Byte")) {
-            code.append("        writer.writeByte(").append(fieldName);
-            if (fieldType.equals("java.lang.Byte")) {
-                code.append(" == null ? (byte) 0 : ").append(fieldName);
+            case "byte", "java.lang.Byte" -> {
+                code.append("        writer.writeByte(").append(fieldName);
+                if (fieldType.equals("java.lang.Byte")) {
+                    code.append(" == null ? (byte) 0 : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("char") || fieldType.equals("java.lang.Character")) {
-            code.append("        writer.writeChar(").append(fieldName);
-            if (fieldType.equals("java.lang.Character")) {
-                code.append(" == null ? '\\0' : ").append(fieldName);
+            case "char", "java.lang.Character" -> {
+                code.append("        writer.writeChar(").append(fieldName);
+                if (fieldType.equals("java.lang.Character")) {
+                    code.append(" == null ? '\\0' : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("boolean") || fieldType.equals("java.lang.Boolean")) {
-            code.append("        writer.writeBoolean(").append(fieldName);
-            if (fieldType.equals("java.lang.Boolean")) {
-                code.append(" == null ? false : ").append(fieldName);
+            case "boolean", "java.lang.Boolean" -> {
+                code.append("        writer.writeBoolean(").append(fieldName);
+                if (fieldType.equals("java.lang.Boolean")) {
+                    code.append(" == null ? false : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("float") || fieldType.equals("java.lang.Float")) {
-            code.append("        writer.writeFloat(").append(fieldName);
-            if (fieldType.equals("java.lang.Float")) {
-                code.append(" == null ? 0f : ").append(fieldName);
+            case "float", "java.lang.Float" -> {
+                code.append("        writer.writeFloat(").append(fieldName);
+                if (fieldType.equals("java.lang.Float")) {
+                    code.append(" == null ? 0f : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("double") || fieldType.equals("java.lang.Double")) {
-            code.append("        writer.writeDouble(").append(fieldName);
-            if (fieldType.equals("java.lang.Double")) {
-                code.append(" == null ? 0.0 : ").append(fieldName);
+            case "double", "java.lang.Double" -> {
+                code.append("        writer.writeDouble(").append(fieldName);
+                if (fieldType.equals("java.lang.Double")) {
+                    code.append(" == null ? 0.0 : ").append(fieldName);
+                }
+                code.append(");\n");
+                return true;
             }
-            code.append(");\n");
-            return true;
-
-        } else if (fieldType.equals("java.lang.String")) {
-            code.append("        writer.writeString(").append(fieldName).append(");\n");
-            return true;
+            case "java.lang.String" -> {
+                code.append("        writer.writeString(").append(fieldName).append(");\n");
+                return true;
+            }
         }
 
         return false;
@@ -218,14 +222,11 @@ public class MyProcessor extends AbstractProcessor {
     private boolean isIterable(VariableElement field) {
         javax.lang.model.type.TypeMirror typeMirror = field.asType();
 
-        // TypeMirror কে TypeElement-এ রূপান্তর করা
         javax.lang.model.util.Types typeUtils = processingEnv.getTypeUtils();
         javax.lang.model.util.Elements elementUtils = processingEnv.getElementUtils();
 
-        // java.lang.Iterable এর TypeMirror তৈরি করা
         javax.lang.model.type.TypeMirror iterableType = elementUtils.getTypeElement("java.lang.Iterable").asType();
 
-        // ইরেজড টাইপ বা সরাসরি সাবটাইপ চেক করা
         return typeUtils.isAssignable(typeUtils.erasure(typeMirror), typeUtils.erasure(iterableType));
     }
 
@@ -248,7 +249,7 @@ public class MyProcessor extends AbstractProcessor {
                 return new String[]{typeArguments.get(0).toString(), typeArguments.get(1).toString()};
             }
         }
-        return new String[]{"java.lang.Object", "java.lang.Object"}; // ফলব্যাক
+        return new String[]{"java.lang.Object", "java.lang.Object"};
     }
 
     private void writeArray(StringBuilder code, String componentType, String currentAccessor, String fieldName, String getSize) {
@@ -264,8 +265,7 @@ public class MyProcessor extends AbstractProcessor {
         if (!writePrimitive(fieldName, componentType, code)) {
             TypeElement arrayElement = processingEnv.getElementUtils().getTypeElement(componentType);
             if (arrayElement != null) {
-                writeIfNull(code, arrayElement, fieldName, arrayElement.asType().toString());
-                //   write(arrayElement, code, fieldName);
+                writeIfNull(code, arrayElement, fieldName, componentType, "                ");
             } else {
                 throw new RuntimeException("Unknown array component type: " + componentType);
             }
@@ -285,7 +285,7 @@ public class MyProcessor extends AbstractProcessor {
         String valVar = "val_" + fieldName;
 
         code.append("        if (").append(currentAccessor).append(" == null) {\n");
-        code.append("            writer.writeInt(0);\n"); // null হলে -1
+        code.append("            writer.writeInt(0);\n");
         code.append("        } else {\n");
         code.append("            writer.writeInt(").append(currentAccessor).append(".size());\n"); // Map-এর সাইজ
         code.append("            for (java.util.Map.Entry<").append(keyType).append(", ").append(valType).append("> ").append(entryVar).append(" : ").append(currentAccessor).append(".entrySet()) {\n");
@@ -293,17 +293,14 @@ public class MyProcessor extends AbstractProcessor {
         code.append("                ").append(keyType).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
         code.append("                ").append(valType).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
 
-        // ক. Key রাইট করা (সাধারণত Keyগুলো String বা Primitive হয়)
         if (!writePrimitive(keyVar, keyType, code)) {
             throw new RuntimeException("Map Key must be primitive or String: " + keyType);
         }
 
-        // খ. Value রাইট করা (Value প্রিমিটিভ, স্ট্রিং বা কাস্টম অবজেক্ট হতে পারে)
         if (!writePrimitive(valVar, valType, code)) {
-            // Value যদি কাস্টম অবজেক্ট হয় (যেমন Map<String, Address>)
             TypeElement valElement = processingEnv.getElementUtils().getTypeElement(valType);
             if (valElement != null) {
-                writeIfNull(code, valElement, valVar, valElement.asType().toString());
+                writeIfNull(code, valElement, valVar, valType, "                ");
             } else {
                 throw new RuntimeException("Unknown Map Value type: " + valType);
             }

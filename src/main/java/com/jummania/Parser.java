@@ -17,7 +17,7 @@ public final class Parser {
 
     void main() throws Throwable {
 
-        //  if (true) return;
+        if (true) return;
 
         Company company = createCompany();
 
@@ -55,7 +55,7 @@ public final class Parser {
 
     public byte[] serialize(Company obj) throws Throwable {
         sb.reset();
-        Company_Serializer.serialize(obj, sb);
+        //   GeneratedSerializers.serialize(obj, sb);
         // serializer.serialize(obj, Company.class, sb);
         return sb.toByteArray();
     }
@@ -162,7 +162,7 @@ public final class Parser {
         }
     }
 
-    @MyCustomAnnotation
+    //   @MyCustomAnnotation
     public static class Employee {
 
         public long id;
@@ -310,7 +310,7 @@ public final class Parser {
         }
     }
 
-    @MyCustomAnnotation
+    //    @MyCustomAnnotation
     public static class Company {
 
         // fd
