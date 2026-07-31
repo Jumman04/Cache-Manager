@@ -30,24 +30,12 @@ class SerializerBuilder {
                 TypeMirror typeMirror = field.asType();
                 String fieldType = typeMirror.toString();
 
-                String currentAccessor = parentAccessor + "." + fieldName;
-
-
-                if (!write(processingEnv, currentAccessor, fieldType)) {
-                    if (isArray(fieldType, typeMirror)) {
-                        String componentType = getArrayComponentType(typeMirror);
-                        writeArray(processingEnv, componentType, currentAccessor, fieldName, ".length");
-                    } else if (isIterable(processingEnv, typeMirror, fieldType)) {
-                        String componentType = getIterableComponentType(typeMirror);
-                        writeArray(processingEnv, componentType, currentAccessor, fieldName, ".size()");
-                    } else if (isMap(processingEnv, typeMirror, fieldType)) {
-                        writeMap(typeMirror, processingEnv, currentAccessor, fieldName);
-                    } else throw new RuntimeException("Unknown type: " + fieldType);
+                if (!write(typeMirror, processingEnv, parentAccessor, fieldName, fieldType)) {
+                    throw new RuntimeException("Unknown type: " + fieldType);
                 }
             }
         }
     }
-
 
     private void writeIfNull(ProcessingEnvironment processingEnv, TypeElement element, boolean hasClass, String currentAccessor, String space) {
         if (hasClass) {
@@ -131,18 +119,28 @@ class SerializerBuilder {
         return false;
     }
 
-    void writeArray(ProcessingEnvironment processingEnv, String componentType, String currentAccessor, String fieldName, String getSize) {
+    void writeArray(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String getSize, String explicitComponentType) {
+        String componentType;
+        TypeMirror componentTypeMirror;
+
+        if (explicitComponentType != null) {
+            componentType = explicitComponentType;
+            componentTypeMirror = typeMirror;
+        } else {
+            TypeMirror[] typeArgs = getTypeArguments(typeMirror);
+            componentTypeMirror = (typeArgs.length > 0) ? typeArgs[0] : null;
+            componentType = componentTypeMirror != null ? componentTypeMirror.toString() : "java.lang.Object";
+        }
 
         builder.append("        if (").append(currentAccessor).append(" == null) {\n");
-        builder.append("            writer.writeInt(0);\n"); // -1 মানে অ্যারেটি null ছিল
+        builder.append("            writer.writeInt(0);\n");
         builder.append("        } else {\n");
-
         builder.append("            writer.writeInt(").append(currentAccessor).append(getSize).append(");\n");
 
-        builder.append("            for (").append(componentType).append(" ").append(fieldName).append(" : ").append(currentAccessor).append(") {\n");
+        String itemVar = "_" + fieldName;
+        builder.append("            for (").append(componentType).append(" ").append(itemVar).append(" : ").append(currentAccessor).append(") {\n");
 
-        //   System.out.println(componentType);
-        if (!write(processingEnv, fieldName, componentType)) {
+        if (!write(componentTypeMirror, processingEnv, null, itemVar, componentType)) {
             throw new RuntimeException("Unknown component type: " + componentType);
         }
 
@@ -151,66 +149,79 @@ class SerializerBuilder {
     }
 
     void writeMap(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName) {
-        String[] kvTypes = getMapKeyAndValueTypes(typeMirror);
-        String keyType = kvTypes[0];
-        String valType = kvTypes[1];
+        TypeMirror[] typeArgs = getTypeArguments(typeMirror);
 
-        String entryVar = "entry_" + fieldName;
-        String keyVar = "key";
-        String valVar = "value";
+        TypeMirror keyTypeMirror = (typeArgs.length > 0) ? typeArgs[0] : processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType();
+        TypeMirror valTypeMirror = (typeArgs.length > 1) ? typeArgs[1] : processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType();
+
+        String keyType = keyTypeMirror.toString();
+        String valType = valTypeMirror.toString();
+
+        String entryVar = "e_" + fieldName;
+        String keyVar = "k_" + fieldName;
+        String valVar = "v_" + fieldName;
 
         builder.append("        if (").append(currentAccessor).append(" == null) {\n");
         builder.append("            writer.writeInt(0);\n");
         builder.append("        } else {\n");
-        builder.append("            writer.writeInt(").append(currentAccessor).append(".size());\n"); // Map-এর সাইজ
+        builder.append("            writer.writeInt(").append(currentAccessor).append(".size());\n");
         builder.append("            for (java.util.Map.Entry<").append(keyType).append(", ").append(valType).append("> ").append(entryVar).append(" : ").append(currentAccessor).append(".entrySet()) {\n");
 
         builder.append("                ").append(keyType).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
         builder.append("                ").append(valType).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
 
-        typeMirror = getInnerTypeMirror(processingEnv, keyType);
-        // System.out.println(getInnerTypeMirror(processingEnv, keyType));
-
-        if (!write(processingEnv, keyVar, keyType)) {
-            if (isArray(keyType, typeMirror)) {
-                String componentType = getArrayComponentType(typeMirror);
-                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".length");
-            } else if (isIterable(processingEnv, typeMirror, keyType)) {
-                String componentType = getIterableComponentType(typeMirror);
-                System.out.println(fieldName);
-                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".size()");
-            } else if (isMap(processingEnv, typeMirror, keyType)) {
-                writeMap(typeMirror, processingEnv, currentAccessor, fieldName);
-            } else throw new RuntimeException("Unknown type: " + keyType);
+        if (!write(keyTypeMirror, processingEnv, null, keyVar, keyType)) {
+            throw new RuntimeException("Unknown map key type: " + keyType);
         }
 
-        if (!write(processingEnv, valVar, valType)) {
-            if (isArray(valType, typeMirror)) {
-                String componentType = getArrayComponentType(typeMirror);
-                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".length");
-            } else if (isIterable(processingEnv, typeMirror, valType)) {
-                String componentType = getIterableComponentType(typeMirror);
-                writeArray(processingEnv, componentType, currentAccessor, fieldName, ".size()");
-            } else if (isMap(processingEnv, typeMirror, valType)) {
-                writeMap(typeMirror, processingEnv, currentAccessor, fieldName);
-            } else throw new RuntimeException("Unknown type: " + valType);
+        if (!write(valTypeMirror, processingEnv, null, valVar, valType)) {
+            throw new RuntimeException("Unknown map value type: " + valType);
         }
-
 
         builder.append("            }\n");
         builder.append("        }\n");
-
     }
 
-    boolean write(ProcessingEnvironment processingEnv, String fieldName, String fieldType) {
-        if (!writePrimitive(fieldName, fieldType)) {
-            TypeElement element = processingEnv.getElementUtils().getTypeElement(fieldType);
-            if (element != null) {
-                writeIfNull(processingEnv, element, hasClass(fieldType), fieldName, "                ");
-            } else return false;
+    boolean write(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String fieldType) {
+
+        if (currentAccessor == null) currentAccessor = fieldName;
+        else currentAccessor = currentAccessor + "." + fieldName;
+
+        if (writePrimitive(currentAccessor, fieldType)) {
+            return true;
         }
 
-        return true;
+        if (isArray(typeMirror, fieldType)) {
+            javax.lang.model.type.ArrayType arrayType = (javax.lang.model.type.ArrayType) typeMirror;
+            javax.lang.model.type.TypeMirror componentTypeMirror = arrayType.getComponentType();
+            String componentType = componentTypeMirror.toString();
+
+            writeArray(componentTypeMirror, processingEnv, currentAccessor, fieldName, ".length", componentType);
+            return true;
+        }
+
+        if (isMap(processingEnv, typeMirror, fieldType)) {
+            writeMap(typeMirror, processingEnv, currentAccessor, fieldName);
+            return true;
+        }
+
+        if (isIterable(processingEnv, typeMirror, fieldType)) {
+            writeArray(typeMirror, processingEnv, currentAccessor, fieldName, ".size()", null);
+            return true;
+        }
+
+        TypeElement element = getNestedTypeElement(processingEnv, fieldType);
+        if (element != null) {
+            writeIfNull(processingEnv, element, hasClass(fieldType), currentAccessor, "                ");
+            return true;
+        }
+
+        String inner = getGenericType(fieldType);
+        if (!inner.equals(fieldType)) {
+            return write(typeMirror, processingEnv, currentAccessor, fieldName, inner);
+        }
+
+        return false;
     }
 
     @Override

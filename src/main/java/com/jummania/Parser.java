@@ -426,8 +426,23 @@ public final class Parser {
     }
 
     @MyCustomAnnotation
-    class TT {
-        //  List<String> testlist;
-        Map<List<List<String>>, List> testmap;
+    public class TT {
+        // ১. মাল্টি-লেভেল নেস্টেড লিস্ট ও ম্যাপের কম্বিনেশন
+        public List<Map<String, List<Map<Integer, String>>>> complexNestedField;
+
+        // ২. অ্যারে এবং নেস্টেড ম্যাপ
+        public Map<String, String[]>[] mapArrayField;
+
+        // ৩. থ্রি-ডি বা ডিপ নেস্টেড লিস্ট
+        public List<List<List<Integer>>> deepListField;
+
+        // ৪. কাস্টম অবজেক্ট নেস্টিং (যদি আপনার সিস্টেমে কাস্টম ক্লাস হ্যান্ডলিং থাকে)
+        public Map<String, UserProfile> userProfileMap;
+
+        public static class UserProfile {
+            public String username;
+            public List<String> tags;
+            public Map<String, Integer> metadata;
+        }
     }
 }
