@@ -17,6 +17,9 @@ public final class Parser {
 
     void main() throws Throwable {
 
+        //GeneratedSerializers.serialize(new TT(), sb);
+
+        System.out.println(sb.toHexString());
         if (true) return;
 
         Company company = createCompany();
@@ -428,7 +431,7 @@ public final class Parser {
     @MyCustomAnnotation
     public class TT {
         // ১. মাল্টি-লেভেল নেস্টেড লিস্ট ও ম্যাপের কম্বিনেশন
-        public List<Map<String, List<Map<Integer, String>>>> complexNestedField;
+        public List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
 
         // ২. অ্যারে এবং নেস্টেড ম্যাপ
         public Map<String, String[]>[] mapArrayField;
@@ -438,6 +441,8 @@ public final class Parser {
 
         // ৪. কাস্টম অবজেক্ট নেস্টিং (যদি আপনার সিস্টেমে কাস্টম ক্লাস হ্যান্ডলিং থাকে)
         public Map<String, UserProfile> userProfileMap;
+
+        //   Company company;
 
         public static class UserProfile {
             public String username;
