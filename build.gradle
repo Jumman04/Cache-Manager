@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'maven-publish'
 }
 
 group = 'com.jummania'
@@ -10,11 +11,18 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.code.gson:gson:2.14.0'
     implementation project(':processor')
     annotationProcessor project(':processor')
 }
 
 test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        register("mavenJava", MavenPublication) {
+            from components.java
+        }
+    }
 }
