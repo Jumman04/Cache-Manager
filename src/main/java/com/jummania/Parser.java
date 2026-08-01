@@ -430,6 +430,8 @@ public final class Parser {
 
     @MyCustomAnnotation
     public class TT {
+
+        //Iterable<String> itemListener;
         // ১. মাল্টি-লেভেল নেস্টেড লিস্ট ও ম্যাপের কম্বিনেশন
         public List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
 

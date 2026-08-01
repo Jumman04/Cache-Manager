@@ -205,7 +205,7 @@ class SerializerBuilder {
             return true;
         }
 
-        if (isIterable(processingEnv, typeMirror, fieldType)) {
+        if (isCollection(processingEnv, typeMirror, fieldType)) {
             writeArray(typeMirror, processingEnv, currentAccessor, fieldName, ".size()", null);
             return true;
         }
@@ -214,11 +214,6 @@ class SerializerBuilder {
         if (element != null) {
             writeIfNull(processingEnv, element, hasClass(fieldType), currentAccessor, "                ");
             return true;
-        }
-
-        String inner = getGenericType(fieldType);
-        if (!inner.equals(fieldType)) {
-            return write(typeMirror, processingEnv, currentAccessor, fieldName, inner);
         }
 
         return false;

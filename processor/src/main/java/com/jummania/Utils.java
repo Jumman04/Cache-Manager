@@ -1,6 +1,7 @@
 package com.jummania;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.util.HashSet;
@@ -13,15 +14,16 @@ class Utils {
         if (typeMirror == null) return false;
         javax.lang.model.util.Types typeUtils = processingEnv.getTypeUtils();
         javax.lang.model.util.Elements elementUtils = processingEnv.getElementUtils();
-        TypeMirror tM = elementUtils.getTypeElement(name).asType();
-        return typeUtils.isAssignable(typeUtils.erasure(typeMirror), typeUtils.erasure(tM));
+        Element element = elementUtils.getTypeElement(name);
+        if (element == null) return false;
+        return typeUtils.isAssignable(typeUtils.erasure(typeMirror), typeUtils.erasure(element.asType()));
     }
 
-    static boolean isIterable(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String fieldType) {
-        if (fieldType != null && (fieldType.startsWith("java.util.List") || fieldType.startsWith("java.util.Set") || fieldType.startsWith("java.util.Collection") || fieldType.startsWith("java.lang.Iterable"))) { // অ্যারে হ্যান্ডেল করার জন্য
+    static boolean isCollection(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String fieldType) {
+        if (fieldType != null && (fieldType.startsWith("java.util.List") || fieldType.startsWith("java.util.Set") || fieldType.startsWith("java.util.Collection"))) {
             return true;
         }
-        return vyTypeMirror(processingEnv, typeMirror, "java.lang.Iterable");
+        return vyTypeMirror(processingEnv, typeMirror, "java.lang.Collection");
     }
 
     public static boolean isMap(ProcessingEnvironment processingEnv, TypeMirror typeMirror, String fieldType) {
