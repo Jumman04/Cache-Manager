@@ -1,6 +1,5 @@
 package com.jummania;
 
-import javax.annotation.Nonnull;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -22,7 +21,7 @@ class SerializerBuilder {
         return builder.append(string);
     }
 
-    void write(ProcessingEnvironment processingEnv, TypeElement element, @Nonnull String parentAccessor) {
+    void write(ProcessingEnvironment processingEnv, TypeElement element, String parentAccessor) {
         for (Element enclosed : element.getEnclosedElements()) {
             if (enclosed.getKind() == ElementKind.FIELD) {
                 VariableElement field = (VariableElement) enclosed;
