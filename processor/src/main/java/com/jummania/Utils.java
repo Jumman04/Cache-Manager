@@ -9,6 +9,9 @@ import java.util.Set;
 
 class Utils {
     static final Set<TypeElement> annotatedClassNames = new HashSet<>();
+    static final Set<String> types = new HashSet<>();
+    static StringBuilder builder = new StringBuilder();
+    static int packSize;
 
     static boolean vyTypeMirror(ProcessingEnvironment processingEnv, TypeMirror typeMirror, CharSequence name) {
         if (typeMirror == null) return false;
@@ -16,6 +19,10 @@ class Utils {
         javax.lang.model.util.Elements elementUtils = processingEnv.getElementUtils();
         Element element = elementUtils.getTypeElement(name);
         if (element == null) return false;
+
+        String type = element.toString();
+        if (types.add(type)) builder.insert(packSize, "import " + type + ";\n");
+
         return typeUtils.isAssignable(typeUtils.erasure(typeMirror), typeUtils.erasure(element.asType()));
     }
 

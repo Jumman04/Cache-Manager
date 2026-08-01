@@ -13,6 +13,7 @@ import java.io.Writer;
 import java.util.Set;
 
 import static com.jummania.Utils.annotatedClassNames;
+import static com.jummania.Utils.packSize;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes("com.jummania.Serializable")
@@ -20,7 +21,7 @@ import static com.jummania.Utils.annotatedClassNames;
 public class MyProcessor extends AbstractProcessor {
 
     String targetPackage = getClass().getPackageName();
-    SerializerBuilder serializerBuilder = new SerializerBuilder(targetPackage);
+    SerializerBuilder serializerBuilder = new SerializerBuilder();
     private boolean isGenerated = false; // একবার জেনারেট হয়ে গেলে যেন ডাবল কল না হয়
 
     @Override
@@ -36,15 +37,15 @@ public class MyProcessor extends AbstractProcessor {
             isGenerated = true;
 
             String targetClassName = "GeneratedSerializers";
-            serializerBuilder.append("package ").append(targetPackage).append(";\n\n");
-            serializerBuilder.append("public final class ").append(targetClassName).append(" {\n\n");
+            packSize = serializerBuilder.append("package ").append(targetPackage).append(";\n\n").append("import com.jummania.writer.Writer;\n").length();
+            serializerBuilder.append("\n\npublic final class ").append(targetClassName).append(" {\n\n");
 
             for (TypeElement element : annotatedClassNames) {
                 String fullClass = element.asType().toString();
                 String className = element.getSimpleName().toString();
                 String varName = className.substring(0, 1).toLowerCase() + className.substring(1);
 
-                serializerBuilder.append("    public static void serialize(").append(fullClass).append(" ").append(varName).append(", com.jummania.writer.Writer writer) throws java.io.IOException {\n");
+                serializerBuilder.append("    public static void serialize(").append(fullClass).append(" ").append(varName).append(", Writer writer) throws java.io.IOException {\n");
 
                 serializerBuilder.write(processingEnv, element, varName);
 
