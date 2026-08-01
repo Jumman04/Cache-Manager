@@ -428,11 +428,12 @@ public final class Parser {
         }
     }
 
+    //  @Serializable
     public class TT {
 
         //Iterable<String> itemListener;
         // ১. মাল্টি-লেভেল নেস্টেড লিস্ট ও ম্যাপের কম্বিনেশন
-        private List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
+        public List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
 
         // ২. অ্যারে এবং নেস্টেড ম্যাপ
         public Map<String, String[]>[] mapArrayField;
