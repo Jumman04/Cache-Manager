@@ -15,7 +15,7 @@ import java.util.Set;
 import static com.jummania.Utils.annotatedClassNames;
 
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("com.jummania.MyCustomAnnotation")
+@SupportedAnnotationTypes("com.jummania.Serializable")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class MyProcessor extends AbstractProcessor {
 
@@ -26,7 +26,7 @@ public class MyProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
-        for (Element element : roundEnv.getElementsAnnotatedWith(MyCustomAnnotation.class)) {
+        for (Element element : roundEnv.getElementsAnnotatedWith(Serializable.class)) {
             if (element.getKind() == ElementKind.CLASS) {
                 annotatedClassNames.add((TypeElement) element);
             }

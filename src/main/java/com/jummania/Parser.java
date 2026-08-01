@@ -428,7 +428,6 @@ public final class Parser {
         }
     }
 
-    @MyCustomAnnotation
     public class TT {
 
         //Iterable<String> itemListener;
