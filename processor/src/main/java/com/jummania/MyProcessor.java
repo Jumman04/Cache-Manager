@@ -13,7 +13,7 @@ import java.io.Writer;
 import java.util.Set;
 
 import static com.jummania.Utils.annotatedClassNames;
-import static com.jummania.Utils.packSize;
+import static com.jummania.Utils.types;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes("com.jummania.Serializable")
@@ -37,17 +37,19 @@ public class MyProcessor extends AbstractProcessor {
             isGenerated = true;
 
             String targetClassName = "GeneratedSerializers";
-            packSize = serializerBuilder.append("package ").append(targetPackage).append(";\n\n").append("import com.jummania.writer.Writer;\n").length();
+            types.add("com.jummania.writer.Writer");
+            types.add("java.io.IOException");
+            serializerBuilder.packSize = serializerBuilder.append("package ").append(targetPackage).append(";\n\n").length();
             serializerBuilder.append("\n\npublic final class ").append(targetClassName).append(" {\n\n");
 
             for (TypeElement element : annotatedClassNames) {
-                String fullClass = element.asType().toString();
+                types.add(element.asType().toString());
                 String className = element.getSimpleName().toString();
                 String varName = className.substring(0, 1).toLowerCase() + className.substring(1);
 
-                serializerBuilder.append("    public static void serialize(").append(fullClass).append(" ").append(varName).append(", Writer writer) throws java.io.IOException {\n");
+                serializerBuilder.append("    public static void serialize(").append(className).append(" ").append(varName).append(", Writer writer) throws IOException {\n");
 
-                serializerBuilder.write(processingEnv, element, varName);
+                serializerBuilder.write(processingEnv, element, varName, 1);
 
                 serializerBuilder.append("    }\n\n");
             }

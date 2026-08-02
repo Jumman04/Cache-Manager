@@ -7,11 +7,11 @@ import javax.lang.model.type.TypeMirror;
 import java.util.HashSet;
 import java.util.Set;
 
+import static javax.lang.model.type.TypeKind.ARRAY;
+
 class Utils {
     static final Set<TypeElement> annotatedClassNames = new HashSet<>();
     static final Set<String> types = new HashSet<>();
-    static StringBuilder builder = new StringBuilder();
-    static int packSize;
 
     static boolean vyTypeMirror(ProcessingEnvironment processingEnv, TypeMirror typeMirror, CharSequence name) {
         if (typeMirror == null) return false;
@@ -19,10 +19,6 @@ class Utils {
         javax.lang.model.util.Elements elementUtils = processingEnv.getElementUtils();
         Element element = elementUtils.getTypeElement(name);
         if (element == null) return false;
-
-        String type = element.toString();
-        if (types.add(type)) builder.insert(packSize, "import " + type + ";\n");
-
         return typeUtils.isAssignable(typeUtils.erasure(typeMirror), typeUtils.erasure(element.asType()));
     }
 
@@ -48,7 +44,7 @@ class Utils {
     }
 
     static boolean isArray(TypeMirror typeMirror, String fieldType) {
-        return fieldType.endsWith("[]") || typeMirror.getKind().name().equals("ARRAY");
+        return fieldType.endsWith("[]") || typeMirror.getKind() == ARRAY;
     }
 
     public static String getGenericType(String fieldType) {

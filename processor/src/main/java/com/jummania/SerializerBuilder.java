@@ -15,14 +15,16 @@ import java.util.Set;
 import static com.jummania.Utils.*;
 
 class SerializerBuilder {
+    StringBuilder builder = new StringBuilder();
     int i = 0;
     Set<String> names = new HashSet<>();
+    int packSize;
 
     StringBuilder append(String string) {
         return builder.append(string);
     }
 
-    void write(ProcessingEnvironment processingEnv, TypeElement element, String parentAccessor) {
+    void write(ProcessingEnvironment processingEnv, TypeElement element, String parentAccessor, int spaceCount) {
         for (Element enclosed : element.getEnclosedElements()) {
             if (enclosed.getKind() == ElementKind.FIELD) {
                 VariableElement field = (VariableElement) enclosed;
@@ -30,23 +32,24 @@ class SerializerBuilder {
                 TypeMirror typeMirror = field.asType();
                 String fieldType = typeMirror.toString();
 
-                if (!write(typeMirror, processingEnv, parentAccessor, fieldName, fieldType)) {
+                if (!write(typeMirror, processingEnv, parentAccessor, fieldName, fieldType, spaceCount + 1)) {
                     throw new RuntimeException("Unknown type: " + fieldType);
                 }
             }
         }
     }
 
-    private void writeIfNull(ProcessingEnvironment processingEnv, TypeElement element, boolean hasClass, String currentAccessor, String space) {
+    private void writeIfNull(ProcessingEnvironment processingEnv, TypeElement element, boolean hasClass, String currentAccessor, int spaceCount) {
         if (hasClass) {
+            String space = space(spaceCount);
             append(space).append("if (").append(currentAccessor).append(" == null)").append(" writer.writeInt(0);\n").append(space).append("else ").append("serialize(").append(currentAccessor).append(", writer);\n");
-        } else write(processingEnv, element, currentAccessor);
+        } else write(processingEnv, element, currentAccessor, spaceCount);
     }
 
-    boolean writePrimitive(String fieldName, String fieldType, int space) {
+    boolean writePrimitive(String fieldName, String fieldType, String space) {
         switch (fieldType) {
             case "int", "java.lang.Integer" -> {
-                builder.append("writer.writeInt(").append(fieldName);
+                builder.append(space).append("writer.writeInt(").append(fieldName);
                 if (fieldType.equals("java.lang.Integer")) {
                     builder.append(" == null ? 0 : ").append(fieldName);
                 }
@@ -54,7 +57,7 @@ class SerializerBuilder {
                 return true;
             }
             case "long", "java.lang.Long" -> {
-                builder.append("writer.writeLong(").append(fieldName);
+                builder.append(space).append("writer.writeLong(").append(fieldName);
                 if (fieldType.equals("java.lang.Long")) {
                     builder.append(" == null ? 0L : ").append(fieldName);
                 }
@@ -62,7 +65,7 @@ class SerializerBuilder {
                 return true;
             }
             case "short", "java.lang.Short" -> {
-                builder.append("writer.writeShort(").append(fieldName);
+                builder.append(space).append("writer.writeShort(").append(fieldName);
                 if (fieldType.equals("java.lang.Short")) {
                     builder.append(" == null ? (short) 0 : ").append(fieldName);
                 }
@@ -70,7 +73,7 @@ class SerializerBuilder {
                 return true;
             }
             case "byte", "java.lang.Byte" -> {
-                builder.append("writer.writeByte(").append(fieldName);
+                builder.append(space).append("writer.writeByte(").append(fieldName);
                 if (fieldType.equals("java.lang.Byte")) {
                     builder.append(" == null ? (byte) 0 : ").append(fieldName);
                 }
@@ -78,7 +81,7 @@ class SerializerBuilder {
                 return true;
             }
             case "char", "java.lang.Character" -> {
-                builder.append("writer.writeChar(").append(fieldName);
+                builder.append(space).append("writer.writeChar(").append(fieldName);
                 if (fieldType.equals("java.lang.Character")) {
                     builder.append(" == null ? '\\0' : ").append(fieldName);
                 }
@@ -86,7 +89,7 @@ class SerializerBuilder {
                 return true;
             }
             case "boolean", "java.lang.Boolean" -> {
-                builder.append("writer.writeBoolean(").append(fieldName);
+                builder.append(space).append("writer.writeBoolean(").append(fieldName);
                 if (fieldType.equals("java.lang.Boolean")) {
                     builder.append(" == null ? false : ").append(fieldName);
                 }
@@ -94,7 +97,7 @@ class SerializerBuilder {
                 return true;
             }
             case "float", "java.lang.Float" -> {
-                builder.append("writer.writeFloat(").append(fieldName);
+                builder.append(space).append("writer.writeFloat(").append(fieldName);
                 if (fieldType.equals("java.lang.Float")) {
                     builder.append(" == null ? 0f : ").append(fieldName);
                 }
@@ -102,7 +105,7 @@ class SerializerBuilder {
                 return true;
             }
             case "double", "java.lang.Double" -> {
-                builder.append("writer.writeDouble(").append(fieldName);
+                builder.append(space).append("writer.writeDouble(").append(fieldName);
                 if (fieldType.equals("java.lang.Double")) {
                     builder.append(" == null ? 0.0 : ").append(fieldName);
                 }
@@ -110,7 +113,7 @@ class SerializerBuilder {
                 return true;
             }
             case "java.lang.String" -> {
-                builder.append("writer.writeString(").append(fieldName).append(");\n");
+                builder.append(space).append("writer.writeString(").append(fieldName).append(");\n");
                 return true;
             }
         }
@@ -118,7 +121,7 @@ class SerializerBuilder {
         return false;
     }
 
-    void writeArray(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String getSize, String explicitComponentType) {
+    void writeArray(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String fieldName, String getSize, String explicitComponentType, int spaceCount) {
         String componentType;
         TypeMirror componentTypeMirror;
 
@@ -131,24 +134,25 @@ class SerializerBuilder {
             componentType = componentTypeMirror != null ? componentTypeMirror.toString() : "java.lang.Object";
         }
 
-        builder.append("        if (").append(currentAccessor).append(" == null) {\n");
-        builder.append("            writer.writeInt(0);\n");
-        builder.append("        } else {\n");
-        builder.append("            writer.writeInt(").append(currentAccessor).append(getSize).append(");\n");
+        String space = space(spaceCount++);
+        String douvleSpace = space(spaceCount);
+        builder.append(space).append("if (").append(fieldName).append(" == null) {\n");
+        builder.append(douvleSpace).append("writer.writeInt(-99);\n");
+        builder.append(space).append("} else {\n");
+        builder.append(douvleSpace).append("writer.writeInt(").append(fieldName).append(getSize).append(");\n");
 
-        String itemVar = "_" + fieldName;
-        builder.append("            for (").append(getNormalizedTypeName(componentTypeMirror)).append(" ").append(itemVar).append(" : ").append(currentAccessor).append(") {\n");
+        String itemVar = getFieldName(fieldName);
+        builder.append(douvleSpace).append("for (").append(getNormalizedTypeName(componentTypeMirror)).append(" ").append(itemVar).append(" : ").append(fieldName).append(") {\n");
 
-        names.add(itemVar);
-        if (!write(componentTypeMirror, processingEnv, null, itemVar, componentType)) {
+        if (!write(componentTypeMirror, processingEnv, null, itemVar, componentType, spaceCount)) {
             throw new RuntimeException("Unknown component type: " + componentType);
         }
 
-        builder.append("            }\n");
-        builder.append("        }\n");
+        builder.append(douvleSpace).append("}\n");
+        builder.append(space).append("}\n");
     }
 
-    void writeMap(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName) {
+    void writeMap(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String fieldName, int spaceCount) {
         TypeMirror[] typeArgs = getTypeArguments(typeMirror);
 
         TypeMirror keyTypeMirror = (typeArgs.length > 0) ? typeArgs[0] : processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType();
@@ -166,73 +170,69 @@ class SerializerBuilder {
 
         names.add(valVar);
 
-        builder.append("        if (").append(currentAccessor).append(" == null) {\n");
-        builder.append("            writer.writeInt(0);\n");
-        builder.append("        } else {\n");
-        builder.append("            writer.writeInt(").append(currentAccessor).append(".size());\n");
-        appendType("java.util.Map.Entry");
-        builder.append("            for (Entry<").append(normalKey).append(", ").append(normalVal).append("> ").append(entryVar).append(" : ").append(currentAccessor).append(".entrySet()) {\n");
+        builder.append("if (").append(fieldName).append(" == null) {\n");
+        builder.append("writer.writeInt(0);\n");
+        builder.append("} else {\n");
+        builder.append("writer.writeInt(").append(fieldName).append(".size());\n");
+        types.add("java.util.Map.Entry");
+        builder.append("for (Entry<").append(normalKey).append(", ").append(normalVal).append("> ").append(entryVar).append(" : ").append(fieldName).append(".entrySet()) {\n");
 
-        builder.append("                ").append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
-        builder.append("                ").append(normalVal).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
+        builder.append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
+        builder.append(normalVal).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
 
-        if (!write(keyTypeMirror, processingEnv, null, keyVar, keyType)) {
+        if (!write(keyTypeMirror, processingEnv, null, keyVar, keyType, spaceCount)) {
             throw new RuntimeException("Unknown map key type: " + keyType);
         }
 
-        if (!write(valTypeMirror, processingEnv, null, valVar, valType)) {
+        if (!write(valTypeMirror, processingEnv, null, valVar, valType, spaceCount)) {
             throw new RuntimeException("Unknown map value type: " + valType);
         }
 
-        builder.append("            }\n");
-        builder.append("        }\n");
+        builder.append("}\n");
+        builder.append("}\n");
     }
 
-    boolean write(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String fieldType) {
+    boolean write(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String fieldType, int spaceCount) {
 
         if (currentAccessor == null) currentAccessor = fieldName;
         else {
             currentAccessor = currentAccessor + "." + fieldName;
         }
 
-        space(2);
+        String space = space(spaceCount);
 
-        if (writePrimitive(currentAccessor, fieldType, 2)) {
+        if (writePrimitive(currentAccessor, fieldType, space)) {
             return true;
         }
 
         if (!names.contains(fieldName)) {
             fieldName = fieldName + i++;
             names.add(fieldName);
-            append("        " + fieldType + " " + fieldName + " = " + currentAccessor + ";\n");
+            append(space).append(getNormalizedTypeName(typeMirror)).append(" ").append(fieldName).append(" = ").append(currentAccessor).append(";\n");
         }
-
-        //  appendType(fieldType);
 
         if (isArray(typeMirror, fieldType)) {
             javax.lang.model.type.ArrayType arrayType = (javax.lang.model.type.ArrayType) typeMirror;
             javax.lang.model.type.TypeMirror componentTypeMirror = arrayType.getComponentType();
             String componentType = componentTypeMirror.toString();
 
-            writeArray(componentTypeMirror, processingEnv, fieldName, fieldName, ".length", componentType);
+            writeArray(componentTypeMirror, processingEnv, fieldName, ".length", componentType, spaceCount);
             return true;
         }
 
         if (isMap(processingEnv, typeMirror, fieldType)) {
-            writeMap(typeMirror, processingEnv, fieldName, fieldName);
+            writeMap(typeMirror, processingEnv, fieldName, spaceCount);
             return true;
         }
 
         if (isCollection(processingEnv, typeMirror, fieldType)) {
-            writeArray(typeMirror, processingEnv, fieldName, fieldName, ".size()", null);
+            writeArray(typeMirror, processingEnv, fieldName, ".size()", null, spaceCount);
             return true;
         }
 
         TypeElement element = getNestedTypeElement(processingEnv, fieldType);
         if (element != null) {
-            appendType(element.toString());
-            System.out.println(element);
-            writeIfNull(processingEnv, element, hasClass(fieldType), fieldName, "                ");
+            writeIfNull(processingEnv, element, hasClass(fieldType), fieldName, spaceCount);
             return true;
         }
 
@@ -241,85 +241,63 @@ class SerializerBuilder {
 
     @Override
     public String toString() {
+        StringBuilder importBuilder = new StringBuilder(types.size() * 9);
+        types.stream().sorted().forEach(type -> importBuilder.append("import ").append(type).append(";\n"));
+
+        importBuilder.append("\n");
+        builder.insert(packSize, importBuilder);
         return builder.toString();
     }
 
-    private String getFieldName(String currentAccessor, String fieldType, String fieldName) {
+    private String getFieldName(String fieldName) {
         if (names.contains(fieldName)) {
-            return fieldName;
+            fieldName = fieldName + i++;
+            names.add(fieldName);
         }
-
-        fieldName = fieldName + i++;
-        names.add(fieldName);
-
-        String s = "        " + fieldType + " " + fieldName + " = " + currentAccessor + ";\n";
-
-        append(s);
-
 
         return fieldName;
     }
 
-    void appendType(String type) {
-        if (types.add(type)) {
-            builder.insert(packSize, "import " + type + ";\n");
-        }
-    }
-
-    void space(int count) {
-        count *= 4;
-        for (int j = 0; j < count; j++) {
-            builder.append(' ');
-        }
-    }
-
-    public String normalizeType(String fullType) {
-        return fullType.replace("java.lang.", "").replace("java.util.", "").replace("java.io.", "");
-    }
-
-    public String getSimpleNameProperly(TypeMirror typeMirror) {
-        if (typeMirror instanceof DeclaredType) {
-            TypeElement typeElement = (TypeElement) ((DeclaredType) typeMirror).asElement();
-            return typeElement.getSimpleName().toString();
-        }
-        // প্রিমিটিভ বা অ্যারে টাইপের জন্য স্ট্রিং রূপান্তর
-        return typeMirror.toString();
+    String space(int count) {
+        return " ".repeat(count * 4);
     }
 
     public String getNormalizedTypeName(TypeMirror typeMirror) {
-        if (typeMirror == null) return "";
-
-        // ১. যদি এটি জেনেরিক বা প্যারামিটারাইজড টাইপ হয় (যেমন List<String>, Map<K,V>)
-        if (typeMirror instanceof DeclaredType declaredType) {
-            TypeElement typeElement = (TypeElement) declaredType.asElement();
-
-            String fullQualifiedName = typeElement.getQualifiedName().toString();
-
-            // java.lang ছাড়া অন্য সব কাস্টম বা ইউটিল ক্লাস ইম্পোর্টে যোগ করব
-            if (!fullQualifiedName.startsWith("java.lang.")) {
-                if (types.add(fullQualifiedName)) builder.insert(packSize, "import " + fullQualifiedName + ";\n");
+        switch (typeMirror) {
+            case null -> {
+                return "";
             }
 
-            StringBuilder sb = new StringBuilder(typeElement.getSimpleName().toString());
+            case DeclaredType declaredType -> {
+                TypeElement typeElement = (TypeElement) declaredType.asElement();
 
-            // ভেতরের জেনেরিক আর্গুমেন্টগুলো (Type Arguments) প্রসেস করার জন্য
-            List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-            if (!typeArguments.isEmpty()) {
-                sb.append("<");
-                for (int i = 0; i < typeArguments.size(); i++) {
-                    if (i > 0) sb.append(", ");
-                    sb.append(getNormalizedTypeName(typeArguments.get(i)));
+                String fullQualifiedName = typeElement.getQualifiedName().toString();
+
+                if (!fullQualifiedName.startsWith("java.lang.")) {
+                    types.add(fullQualifiedName);
                 }
-                sb.append(">");
+
+                StringBuilder sb = new StringBuilder(typeElement.getSimpleName().toString());
+
+                List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+                if (!typeArguments.isEmpty()) {
+                    sb.append("<");
+                    for (int i = 0; i < typeArguments.size(); i++) {
+                        if (i > 0) sb.append(", ");
+                        sb.append(getNormalizedTypeName(typeArguments.get(i)));
+                    }
+                    sb.append(">");
+                }
+                return sb.toString();
             }
-            return sb.toString();
-        }
-        // ২. যদি অ্যারে টাইপ হয় (যেমন Company[])
-        else if (typeMirror instanceof ArrayType arrayType) {
-            return getNormalizedTypeName(arrayType.getComponentType()) + "[]";
+
+            case ArrayType arrayType -> {
+                return getNormalizedTypeName(arrayType.getComponentType()) + "[]";
+            }
+            default -> {
+            }
         }
 
-        // ৩. প্রিমিটিভ বা অন্য সাধারণ টাইপের জন্য
         String typeStr = typeMirror.toString();
         if (typeStr.startsWith("java.lang.")) {
             return typeStr.substring("java.lang.".length());
