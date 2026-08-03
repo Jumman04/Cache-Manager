@@ -181,15 +181,18 @@ class SerializerBuilder {
         types.add("java.util.Map.Entry");
         builder.append(doubleSpace).append("for (Entry<").append(normalKey).append(", ").append(normalVal).append("> ").append(entryVar).append(" : ").append(fieldName).append(".entrySet()) {\n");
 
-        builder.append(tripleSpace).append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
-        builder.append(tripleSpace).append(normalVal).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
-
-        if (!write(keyTypeMirror, processingEnv, null, keyVar, keyType, spaceCount)) {
-            throw new RuntimeException("Unknown map key type: " + keyType);
+        if (!writePrimitive(entryVar + ".getKey()", keyType, tripleSpace)) {
+            builder.append(tripleSpace).append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
+            if (!write(keyTypeMirror, processingEnv, null, keyVar, keyType, spaceCount)) {
+                throw new RuntimeException("Unknown map key type: " + keyType);
+            }
         }
 
-        if (!write(valTypeMirror, processingEnv, null, valVar, valType, spaceCount)) {
-            throw new RuntimeException("Unknown map value type: " + valType);
+        if (!writePrimitive(entryVar + ".getValue()", valType, tripleSpace)) {
+            builder.append(tripleSpace).append(normalVal).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
+            if (!write(valTypeMirror, processingEnv, null, valVar, valType, spaceCount)) {
+                throw new RuntimeException("Unknown map value type: " + valType);
+            }
         }
 
         builder.append(doubleSpace).append("}\n");
