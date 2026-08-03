@@ -4,8 +4,16 @@ import java.nio.charset.StandardCharsets;
 
 public final class ByteWriter implements Writer {
 
-    private byte[] data = new byte[256];
+    private byte[] data;
     private int size;
+
+    public ByteWriter(int size) {
+        data = new byte[size];
+    }
+
+    public ByteWriter() {
+        data = new byte[16];
+    }
 
     public int size() {
         return size;
@@ -107,13 +115,8 @@ public final class ByteWriter implements Writer {
 
     @Override
     public void writeString(String value) {
-
-        if (value == null) {
-            writeInt(0);
-            return;
-        }
-
-        writeBytes(value.getBytes(StandardCharsets.UTF_8));
+        if (value == null) writeInt(0);
+        else writeBytes(value.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

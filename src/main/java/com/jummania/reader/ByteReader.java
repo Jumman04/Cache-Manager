@@ -17,9 +17,7 @@ public final class ByteReader implements Reader {
     @Override
     public byte[] readBytes(int length) {
 
-        if (length < 0) {
-            return null;
-        }
+        if (length < 0) return null;
 
         byte[] buffer = new byte[length];
 

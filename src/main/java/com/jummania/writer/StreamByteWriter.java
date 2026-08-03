@@ -65,7 +65,7 @@ public final class StreamByteWriter implements Writer, Closeable, Flushable {
     public void writeString(String value) throws IOException {
 
         if (value == null) {
-            writeInt(-1);
+            writeInt(0);
             return;
         }
 

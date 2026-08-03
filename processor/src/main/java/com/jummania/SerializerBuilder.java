@@ -32,7 +32,7 @@ class SerializerBuilder {
                 TypeMirror typeMirror = field.asType();
                 String fieldType = typeMirror.toString();
 
-                if (!write(typeMirror, processingEnv, parentAccessor, fieldName, fieldType, spaceCount)) {
+                if (!writeAny(typeMirror, processingEnv, parentAccessor, fieldName, fieldType, spaceCount)) {
                     throw new RuntimeException("Unknown type: " + fieldType);
                 }
             }
@@ -130,7 +130,7 @@ class SerializerBuilder {
             componentTypeMirror = typeMirror;
         } else {
             TypeMirror[] typeArgs = getTypeArguments(typeMirror);
-            componentTypeMirror = (typeArgs.length > 0) ? typeArgs[0] : null;
+            componentTypeMirror = typeArgs[0];
             componentType = componentTypeMirror != null ? componentTypeMirror.toString() : "java.lang.Object";
         }
 
@@ -144,7 +144,7 @@ class SerializerBuilder {
         String itemVar = getFieldName(fieldName);
         builder.append(doubleSpace).append("for (").append(getNormalizedTypeName(componentTypeMirror)).append(" ").append(itemVar).append(" : ").append(fieldName).append(") {\n");
 
-        if (!write(componentTypeMirror, processingEnv, null, itemVar, componentType, spaceCount)) {
+        if (!writeAny(componentTypeMirror, processingEnv, null, itemVar, componentType, spaceCount)) {
             throw new RuntimeException("Unknown component type: " + componentType);
         }
 
@@ -155,8 +155,8 @@ class SerializerBuilder {
     void writeMap(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String fieldName, int spaceCount) {
         TypeMirror[] typeArgs = getTypeArguments(typeMirror);
 
-        TypeMirror keyTypeMirror = (typeArgs.length > 0) ? typeArgs[0] : processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType();
-        TypeMirror valTypeMirror = (typeArgs.length > 1) ? typeArgs[1] : processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType();
+        TypeMirror keyTypeMirror = typeArgs[0];
+        TypeMirror valTypeMirror = typeArgs[1];
 
         String keyType = keyTypeMirror.toString();
         String valType = valTypeMirror.toString();
@@ -183,14 +183,14 @@ class SerializerBuilder {
 
         if (!writePrimitive(entryVar + ".getKey()", keyType, tripleSpace)) {
             builder.append(tripleSpace).append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
-            if (!write(keyTypeMirror, processingEnv, null, keyVar, keyType, spaceCount)) {
+            if (!writeAny(keyTypeMirror, processingEnv, null, keyVar, keyType, spaceCount)) {
                 throw new RuntimeException("Unknown map key type: " + keyType);
             }
         }
 
         if (!writePrimitive(entryVar + ".getValue()", valType, tripleSpace)) {
             builder.append(tripleSpace).append(normalVal).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
-            if (!write(valTypeMirror, processingEnv, null, valVar, valType, spaceCount)) {
+            if (!writeAny(valTypeMirror, processingEnv, null, valVar, valType, spaceCount)) {
                 throw new RuntimeException("Unknown map value type: " + valType);
             }
         }
@@ -199,18 +199,14 @@ class SerializerBuilder {
         builder.append(space).append("}\n");
     }
 
-    boolean write(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String fieldType, int spaceCount) {
+    boolean writeAny(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String fieldType, int spaceCount) {
 
         if (currentAccessor == null) currentAccessor = fieldName;
-        else {
-            currentAccessor = currentAccessor + "." + fieldName;
-        }
+        else currentAccessor = currentAccessor + "." + fieldName;
 
         String space = space(++spaceCount);
 
-        if (writePrimitive(currentAccessor, fieldType, space)) {
-            return true;
-        }
+        if (writePrimitive(currentAccessor, fieldType, space)) return true;
 
         if (!names.contains(fieldName)) {
             fieldName = fieldName + i++;
@@ -220,8 +216,8 @@ class SerializerBuilder {
         }
 
         if (isArray(typeMirror, fieldType)) {
-            javax.lang.model.type.ArrayType arrayType = (javax.lang.model.type.ArrayType) typeMirror;
-            javax.lang.model.type.TypeMirror componentTypeMirror = arrayType.getComponentType();
+            ArrayType arrayType = (ArrayType) typeMirror;
+            TypeMirror componentTypeMirror = arrayType.getComponentType();
             String componentType = componentTypeMirror.toString();
 
             writeArray(componentTypeMirror, processingEnv, fieldName, ".length", componentType, spaceCount);
