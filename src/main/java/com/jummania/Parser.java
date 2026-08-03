@@ -244,8 +244,7 @@ public final class Parser {
         }
 
         public static class DeepInner {
-            public int id; // আবার একই নাম 'id'
-            //    public List<InnerData> innerList; // লিস্টের ভেতর আবার InnerData অবজেক্ট
+            public int id;
         }
     }
 }

@@ -212,6 +212,7 @@ class SerializerBuilder {
         if (!names.contains(fieldName)) {
             fieldName = fieldName + i++;
             names.add(fieldName);
+            if (builder.charAt(builder.length() - 2) != '{') append("\n");
             append(space).append(getNormalizedTypeName(typeMirror)).append(" ").append(fieldName).append(" = ").append(currentAccessor).append(";\n");
         }
 
