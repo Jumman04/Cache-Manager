@@ -1,8 +1,9 @@
 package com.jummania;
 
-import com.google.auto.service.AutoService;
-
-import javax.annotation.processing.*;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -15,7 +16,6 @@ import java.util.Set;
 import static com.jummania.Utils.annotatedClassNames;
 import static com.jummania.Utils.types;
 
-@AutoService(Processor.class)
 @SupportedAnnotationTypes("com.jummania.Serializable")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class MyProcessor extends AbstractProcessor {
