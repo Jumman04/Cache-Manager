@@ -40,7 +40,7 @@ public class MyProcessor extends AbstractProcessor {
             types.add("com.jummania.writer.Writer");
             types.add("java.io.IOException");
             serializerBuilder.packSize = serializerBuilder.append("package ").append(targetPackage).append(";\n\n").length();
-            serializerBuilder.append("\n\npublic final class ").append(targetClassName).append(" {\n\n");
+            serializerBuilder.append("\npublic final class ").append(targetClassName).append(" {\n\n");
 
             for (TypeElement element : annotatedClassNames) {
                 types.add(element.asType().toString());

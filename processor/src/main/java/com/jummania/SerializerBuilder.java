@@ -32,7 +32,7 @@ class SerializerBuilder {
                 TypeMirror typeMirror = field.asType();
                 String fieldType = typeMirror.toString();
 
-                if (!write(typeMirror, processingEnv, parentAccessor, fieldName, fieldType, spaceCount + 1)) {
+                if (!write(typeMirror, processingEnv, parentAccessor, fieldName, fieldType, spaceCount)) {
                     throw new RuntimeException("Unknown type: " + fieldType);
                 }
             }
@@ -43,7 +43,7 @@ class SerializerBuilder {
         if (hasClass) {
             String space = space(spaceCount);
             append(space).append("if (").append(currentAccessor).append(" == null)").append(" writer.writeInt(0);\n").append(space).append("else ").append("serialize(").append(currentAccessor).append(", writer);\n");
-        } else write(processingEnv, element, currentAccessor, spaceCount);
+        } else write(processingEnv, element, currentAccessor, --spaceCount);
     }
 
     boolean writePrimitive(String fieldName, String fieldType, String space) {
@@ -135,20 +135,20 @@ class SerializerBuilder {
         }
 
         String space = space(spaceCount++);
-        String douvleSpace = space(spaceCount);
+        String doubleSpace = space(spaceCount);
         builder.append(space).append("if (").append(fieldName).append(" == null) {\n");
-        builder.append(douvleSpace).append("writer.writeInt(-99);\n");
+        builder.append(doubleSpace).append("writer.writeInt(0);\n");
         builder.append(space).append("} else {\n");
-        builder.append(douvleSpace).append("writer.writeInt(").append(fieldName).append(getSize).append(");\n");
+        builder.append(doubleSpace).append("writer.writeInt(").append(fieldName).append(getSize).append(");\n");
 
         String itemVar = getFieldName(fieldName);
-        builder.append(douvleSpace).append("for (").append(getNormalizedTypeName(componentTypeMirror)).append(" ").append(itemVar).append(" : ").append(fieldName).append(") {\n");
+        builder.append(doubleSpace).append("for (").append(getNormalizedTypeName(componentTypeMirror)).append(" ").append(itemVar).append(" : ").append(fieldName).append(") {\n");
 
         if (!write(componentTypeMirror, processingEnv, null, itemVar, componentType, spaceCount)) {
             throw new RuntimeException("Unknown component type: " + componentType);
         }
 
-        builder.append(douvleSpace).append("}\n");
+        builder.append(doubleSpace).append("}\n");
         builder.append(space).append("}\n");
     }
 
@@ -170,15 +170,19 @@ class SerializerBuilder {
 
         names.add(valVar);
 
-        builder.append("if (").append(fieldName).append(" == null) {\n");
-        builder.append("writer.writeInt(0);\n");
-        builder.append("} else {\n");
-        builder.append("writer.writeInt(").append(fieldName).append(".size());\n");
-        types.add("java.util.Map.Entry");
-        builder.append("for (Entry<").append(normalKey).append(", ").append(normalVal).append("> ").append(entryVar).append(" : ").append(fieldName).append(".entrySet()) {\n");
+        String space = space(spaceCount++);
+        String doubleSpace = space(spaceCount);
+        String tripleSpace = space(spaceCount + 1);
 
-        builder.append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
-        builder.append(normalVal).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
+        builder.append(space).append("if (").append(fieldName).append(" == null) {\n");
+        builder.append(doubleSpace).append("writer.writeInt(0);\n");
+        builder.append(space).append("} else {\n");
+        builder.append(doubleSpace).append("writer.writeInt(").append(fieldName).append(".size());\n");
+        types.add("java.util.Map.Entry");
+        builder.append(doubleSpace).append("for (Entry<").append(normalKey).append(", ").append(normalVal).append("> ").append(entryVar).append(" : ").append(fieldName).append(".entrySet()) {\n");
+
+        builder.append(tripleSpace).append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
+        builder.append(tripleSpace).append(normalVal).append(" ").append(valVar).append(" = ").append(entryVar).append(".getValue();\n");
 
         if (!write(keyTypeMirror, processingEnv, null, keyVar, keyType, spaceCount)) {
             throw new RuntimeException("Unknown map key type: " + keyType);
@@ -188,8 +192,8 @@ class SerializerBuilder {
             throw new RuntimeException("Unknown map value type: " + valType);
         }
 
-        builder.append("}\n");
-        builder.append("}\n");
+        builder.append(doubleSpace).append("}\n");
+        builder.append(space).append("}\n");
     }
 
     boolean write(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String currentAccessor, String fieldName, String fieldType, int spaceCount) {
@@ -199,7 +203,7 @@ class SerializerBuilder {
             currentAccessor = currentAccessor + "." + fieldName;
         }
 
-        String space = space(spaceCount);
+        String space = space(++spaceCount);
 
         if (writePrimitive(currentAccessor, fieldType, space)) {
             return true;
@@ -263,11 +267,8 @@ class SerializerBuilder {
     }
 
     public String getNormalizedTypeName(TypeMirror typeMirror) {
-        switch (typeMirror) {
-            case null -> {
-                return "";
-            }
-
+        return switch (typeMirror) {
+            case null -> "";
             case DeclaredType declaredType -> {
                 TypeElement typeElement = (TypeElement) declaredType.asElement();
 
@@ -288,20 +289,17 @@ class SerializerBuilder {
                     }
                     sb.append(">");
                 }
-                return sb.toString();
+                yield sb.toString();
             }
-
-            case ArrayType arrayType -> {
-                return getNormalizedTypeName(arrayType.getComponentType()) + "[]";
-            }
+            case ArrayType arrayType -> getNormalizedTypeName(arrayType.getComponentType()) + "[]";
             default -> {
-            }
-        }
+                String typeStr = typeMirror.toString();
+                if (typeStr.startsWith("java.lang.")) {
+                    yield typeStr.substring("java.lang.".length());
+                }
 
-        String typeStr = typeMirror.toString();
-        if (typeStr.startsWith("java.lang.")) {
-            return typeStr.substring("java.lang.".length());
-        }
-        return typeStr;
+                yield typeStr;
+            }
+        };
     }
 }
