@@ -22,7 +22,7 @@ public class MyProcessor extends AbstractProcessor {
 
     String targetPackage = getClass().getPackageName();
     SerializerBuilder serializerBuilder = new SerializerBuilder();
-    private boolean isGenerated = false; // একবার জেনারেট হয়ে গেলে যেন ডাবল কল না হয়
+    private boolean isGenerated = false;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
