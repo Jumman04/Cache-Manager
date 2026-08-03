@@ -268,39 +268,38 @@ class SerializerBuilder {
     }
 
     public String getNormalizedTypeName(TypeMirror typeMirror) {
-        return switch (typeMirror) {
-            case null -> "";
-            case DeclaredType declaredType -> {
-                TypeElement typeElement = (TypeElement) declaredType.asElement();
+        if (typeMirror == null) {
+            return "";
+        } else if (typeMirror instanceof DeclaredType declaredType) {
+            TypeElement typeElement = (TypeElement) declaredType.asElement();
 
-                String fullQualifiedName = typeElement.getQualifiedName().toString();
+            String fullQualifiedName = typeElement.getQualifiedName().toString();
 
-                if (!fullQualifiedName.startsWith("java.lang.")) {
-                    types.add(fullQualifiedName);
-                }
-
-                StringBuilder sb = new StringBuilder(typeElement.getSimpleName().toString());
-
-                List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-                if (!typeArguments.isEmpty()) {
-                    sb.append("<");
-                    for (int i = 0; i < typeArguments.size(); i++) {
-                        if (i > 0) sb.append(", ");
-                        sb.append(getNormalizedTypeName(typeArguments.get(i)));
-                    }
-                    sb.append(">");
-                }
-                yield sb.toString();
+            if (!fullQualifiedName.startsWith("java.lang.")) {
+                types.add(fullQualifiedName);
             }
-            case ArrayType arrayType -> getNormalizedTypeName(arrayType.getComponentType()) + "[]";
-            default -> {
-                String typeStr = typeMirror.toString();
-                if (typeStr.startsWith("java.lang.")) {
-                    yield typeStr.substring("java.lang.".length());
-                }
 
-                yield typeStr;
+            StringBuilder sb = new StringBuilder(typeElement.getSimpleName().toString());
+
+            List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+            if (!typeArguments.isEmpty()) {
+                sb.append("<");
+                for (int i = 0; i < typeArguments.size(); i++) {
+                    if (i > 0) sb.append(", ");
+                    sb.append(getNormalizedTypeName(typeArguments.get(i)));
+                }
+                sb.append(">");
             }
-        };
+            return sb.toString();
+        } else if (typeMirror instanceof ArrayType arrayType) {
+            return getNormalizedTypeName(arrayType.getComponentType()) + "[]";
+        } else {
+            String typeStr = typeMirror.toString();
+            if (typeStr.startsWith("java.lang.")) {
+                return typeStr.substring("java.lang.".length());
+            }
+
+            return typeStr;
+        }
     }
 }
