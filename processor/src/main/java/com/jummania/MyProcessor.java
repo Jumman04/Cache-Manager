@@ -12,20 +12,10 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.jummania.Utils.annotatedClassNames;
-
 public class MyProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-
-        // ১. এই রাউন্ডে যে ক্লাসগুলো পাওয়া গেছে, শুধু সেগুলো গ্লোবাল এবং লোকাল সেটে যোগ করুন
-        for (Element element : roundEnv.getElementsAnnotatedWith(Serializable.class)) {
-            if (element.getKind() == ElementKind.CLASS) {
-                TypeElement typeElement = (TypeElement) element;
-                annotatedClassNames.add(typeElement);
-            }
-        }
 
         // ২. শুধুমাত্র এই রাউন্ডে নতুন আসা ক্লাসগুলোর ফাইল জেনারেট করুন
         for (Element element : roundEnv.getElementsAnnotatedWith(Serializable.class)) {
