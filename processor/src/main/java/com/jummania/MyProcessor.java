@@ -17,21 +17,20 @@ import static com.jummania.Utils.annotatedClassNames;
 public class MyProcessor extends AbstractProcessor {
 
     SerializerBuilder serializerBuilder = new SerializerBuilder();
-    private boolean isGenerated = false;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
-        for (Element element : roundEnv.getElementsAnnotatedWith(Serializable.class)) {
+        Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(Serializable.class);
+        for (Element element : elements) {
             if (element.getKind() == ElementKind.CLASS) {
                 annotatedClassNames.add((TypeElement) element);
             }
         }
 
-        if (roundEnv.processingOver() && !isGenerated && !annotatedClassNames.isEmpty()) {
-            isGenerated = true;
+        for (Element element : elements) {
 
-            for (TypeElement element : annotatedClassNames) {
+            if (element.getKind() == ElementKind.CLASS) {
 
                 String packageName = processingEnv.getElementUtils().getPackageOf(element).getQualifiedName().toString();
                 serializerBuilder.addImport("com.jummania.writer.Writer");
@@ -46,7 +45,7 @@ public class MyProcessor extends AbstractProcessor {
 
                 serializerBuilder.append("    public static void serialize(").append(className).append(" ").append(varName).append(", Writer writer) throws IOException {\n");
 
-                serializerBuilder.write(processingEnv, element, varName, 1);
+                serializerBuilder.write(processingEnv, (TypeElement) element, varName, 1);
 
                 serializerBuilder.append("    }\n\n");
 
