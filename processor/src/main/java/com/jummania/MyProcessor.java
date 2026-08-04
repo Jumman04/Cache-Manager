@@ -53,7 +53,7 @@ public class MyProcessor extends AbstractProcessor {
                 serializerBuilder.append("}\n");
 
                 try {
-                    JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(packageName + "." + targetClassName);
+                    JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(packageName + "." + targetClassName, element);
                     try (Writer writer = builderFile.openWriter()) {
                         writer.write(serializerBuilder.toString());
                     }
