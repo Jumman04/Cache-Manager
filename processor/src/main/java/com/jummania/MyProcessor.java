@@ -12,18 +12,26 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.jummania.Utils.annotatedClassNames;
+
 public class MyProcessor extends AbstractProcessor {
+
+    SerializerBuilder serializerBuilder = new SerializerBuilder();
+    private boolean isGenerated = false;
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
-        // ২. শুধুমাত্র এই রাউন্ডে নতুন আসা ক্লাসগুলোর ফাইল জেনারেট করুন
         for (Element element : roundEnv.getElementsAnnotatedWith(Serializable.class)) {
-
             if (element.getKind() == ElementKind.CLASS) {
+                annotatedClassNames.add((TypeElement) element);
+            }
+        }
 
-                // লুপের ভেতরে প্রতিবার নতুন বিল্ডার নিতে হবে যেন আগের কোড মিক্স না হয়
-                SerializerBuilder serializerBuilder = new SerializerBuilder();
+        if (roundEnv.processingOver() && !isGenerated && !annotatedClassNames.isEmpty()) {
+            isGenerated = true;
+
+            for (TypeElement element : annotatedClassNames) {
 
                 String packageName = processingEnv.getElementUtils().getPackageOf(element).getQualifiedName().toString();
                 serializerBuilder.addImport("com.jummania.writer.Writer");
@@ -38,13 +46,13 @@ public class MyProcessor extends AbstractProcessor {
 
                 serializerBuilder.append("    public static void serialize(").append(className).append(" ").append(varName).append(", Writer writer) throws IOException {\n");
 
-                serializerBuilder.write(processingEnv, (TypeElement) element, varName, 1);
+                serializerBuilder.write(processingEnv, element, varName, 1);
 
                 serializerBuilder.append("    }\n\n");
+
                 serializerBuilder.append("}\n");
 
                 try {
-                    // সঠিক অরিজিনেটিং এলিমেন্ট পাস করা হয়েছে
                     JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(packageName + "." + targetClassName, element);
                     try (Writer writer = builderFile.openWriter()) {
                         writer.write(serializerBuilder.toString());
@@ -53,9 +61,7 @@ public class MyProcessor extends AbstractProcessor {
                     throw new RuntimeException(e);
                 }
             }
-
         }
-
 
         return true;
     }
