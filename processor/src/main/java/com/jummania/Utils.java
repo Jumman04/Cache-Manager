@@ -11,7 +11,6 @@ import static javax.lang.model.type.TypeKind.ARRAY;
 
 class Utils {
     static final Set<TypeElement> annotatedClassNames = new HashSet<>();
-    static final Set<String> types = new HashSet<>();
 
     static boolean vyTypeMirror(ProcessingEnvironment processingEnv, TypeMirror typeMirror, CharSequence name) {
         if (typeMirror == null) return false;

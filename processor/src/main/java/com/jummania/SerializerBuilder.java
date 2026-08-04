@@ -1,10 +1,7 @@
 package com.jummania;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -15,6 +12,7 @@ import java.util.Set;
 import static com.jummania.Utils.*;
 
 class SerializerBuilder {
+    Set<String> types = new HashSet<>();
     StringBuilder builder = new StringBuilder();
     int i = 0;
     Set<String> names = new HashSet<>();
@@ -24,9 +22,15 @@ class SerializerBuilder {
         return builder.append(string);
     }
 
+    void addImport(String string) {
+        types.add(string);
+    }
+
     void write(ProcessingEnvironment processingEnv, TypeElement element, String parentAccessor, int spaceCount) {
         for (Element enclosed : element.getEnclosedElements()) {
             if (enclosed.getKind() == ElementKind.FIELD) {
+
+                if (enclosed.getModifiers().contains(Modifier.PRIVATE)) continue;
                 VariableElement field = (VariableElement) enclosed;
                 String fieldName = field.getSimpleName().toString();
                 TypeMirror typeMirror = field.asType();
@@ -39,11 +43,11 @@ class SerializerBuilder {
         }
     }
 
-    private void writeIfNull(ProcessingEnvironment processingEnv, TypeElement element, boolean hasClass, String currentAccessor, int spaceCount) {
+    private void writeIfNull(ProcessingEnvironment processingEnv, TypeElement element, boolean hasClass, String className, String fieldName, int spaceCount) {
         if (hasClass) {
             String space = space(spaceCount);
-            append(space).append("if (").append(currentAccessor).append(" == null)").append(" writer.writeInt(0);\n").append(space).append("else ").append("serialize(").append(currentAccessor).append(", writer);\n");
-        } else write(processingEnv, element, currentAccessor, --spaceCount);
+            builder.append(space).append("if (").append(fieldName).append(" == null)").append(" writer.writeInt(0);\n").append(space).append("else ").append(className).append("_.").append("serialize(").append(fieldName).append(", writer);\n");
+        } else write(processingEnv, element, fieldName, --spaceCount);
     }
 
     boolean writePrimitive(String fieldName, String fieldType, String space) {
@@ -208,11 +212,14 @@ class SerializerBuilder {
 
         if (writePrimitive(currentAccessor, fieldType, space)) return true;
 
+        String className = null;
+
         if (!names.contains(fieldName)) {
             fieldName = fieldName + i++;
             names.add(fieldName);
-            if (builder.charAt(builder.length() - 2) != '{') append("\n");
-            append(space).append(getNormalizedTypeName(typeMirror)).append(" ").append(fieldName).append(" = ").append(currentAccessor).append(";\n");
+            if (builder.charAt(builder.length() - 2) != '{') builder.append("\n");
+            className = getNormalizedTypeName(typeMirror);
+            builder.append(space).append(className).append(" ").append(fieldName).append(" = ").append(currentAccessor).append(";\n");
         }
 
         if (isArray(typeMirror, fieldType)) {
@@ -236,7 +243,8 @@ class SerializerBuilder {
 
         TypeElement element = getNestedTypeElement(processingEnv, fieldType);
         if (element != null) {
-            writeIfNull(processingEnv, element, hasClass(fieldType), fieldName, spaceCount);
+            if (className == null) className = getNormalizedTypeName(typeMirror);
+            writeIfNull(processingEnv, element, hasClass(fieldType), className, fieldName, spaceCount);
             return true;
         }
 
@@ -250,7 +258,11 @@ class SerializerBuilder {
 
         importBuilder.append("\n");
         builder.insert(packSize, importBuilder);
-        return builder.toString();
+        String result = builder.toString();
+
+        builder.setLength(0);
+        types = new HashSet<>(types.size());
+        return result;
     }
 
     private String getFieldName(String fieldName) {

@@ -10,6 +10,11 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    compileOnly "net.ltgt.gradle.incap:incap-processor:1.0.0"
+    implementation "net.ltgt.gradle.incap:incap:1.0.0"
+}
+
 test {
     useJUnitPlatform()
 }

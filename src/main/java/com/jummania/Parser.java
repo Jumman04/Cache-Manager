@@ -133,7 +133,7 @@ public final class Parser {
         return company;
     }
 
-    @Serializable
+    // @Serializable
     public static class Address {
 
         public String country;
@@ -142,7 +142,7 @@ public final class Parser {
         public int zipCode;
     }
 
-    @Serializable
+    // @Serializable
     public static class Employee {
 
         public long id;
@@ -157,7 +157,7 @@ public final class Parser {
         public Skill[] skills;
     }
 
-    @Serializable
+    // @Serializable
     public static class Phone {
 
         public String type;
@@ -165,14 +165,14 @@ public final class Parser {
 
     }
 
-    @Serializable
+    //  @Serializable
     public static class Skill {
 
         public String name;
         public int level;
     }
 
-    @Serializable
+    //  @Serializable
     public static class Company {
 
         // fd
@@ -189,29 +189,29 @@ public final class Parser {
     @Serializable
     public static class Department {
 
-        public int id;
+        private int id;
         public String name;
         public boolean active;
     }
 
 
-    @Serializable
+    // @Serializable
     public class TT {
 
         UserProfile[] userProfile;
 
         //Iterable<String> itemListener;
         // ১. মাল্টি-লেভেল নেস্টেড লিস্ট ও ম্যাপের কম্বিনেশন
-        public List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
+        List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
 
         // ২. অ্যারে এবং নেস্টেড ম্যাপ
-        public Map<String, String[]>[] mapArrayField;
+        Map<String, String[]>[] mapArrayField;
 
         // ৩. থ্রি-ডি বা ডিপ নেস্টেড লিস্ট
-        public List<List<List<Integer>>> deepListField;
+        List<List<List<Integer>>> deepListField;
 
         // ৪. কাস্টম অবজেক্ট নেস্টিং (যদি আপনার সিস্টেমে কাস্টম ক্লাস হ্যান্ডলিং থাকে)
-        public Map<String, UserProfile> userProfileMap;
+        Map<String, UserProfile> userProfileMap;
 
 
         //   Company company;
@@ -225,7 +225,7 @@ public final class Parser {
         }
     }
 
-    @Serializable
+    //  @Serializable
     public class TestConflict {
         public int id; // রুট লেভেলে id
         public String name; // রুট লেভেলে name
