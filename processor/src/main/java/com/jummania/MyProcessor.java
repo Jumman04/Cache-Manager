@@ -1,12 +1,7 @@
 package com.jummania;
 
-import net.ltgt.gradle.incap.IncrementalAnnotationProcessor;
-import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType;
-
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -14,13 +9,11 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.Set;
 
 import static com.jummania.Utils.annotatedClassNames;
 
-@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.ISOLATING)
-@SupportedAnnotationTypes("com.jummania.Serializable")
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class MyProcessor extends AbstractProcessor {
 
     SerializerBuilder serializerBuilder = new SerializerBuilder();
@@ -70,77 +63,21 @@ public class MyProcessor extends AbstractProcessor {
             }
         }
 
-
-        /*
-        if (roundEnv.processingOver() && !isGenerated && !annotatedClassNames.isEmpty()) {
-
-            isGenerated = true; // ফ্ল্যাগ অন করে দিলাম যাতে পরের রাউন্ডে আর না ঢোকে
-
-
-
-            for (TypeElement element : annotatedClassNames) {
-
-                String packageName = processingEnv.getElementUtils().getPackageOf(element).getQualifiedName().toString();
-
-                String className = element.getSimpleName().toString();
-
-                String generatedClassName = className + "_Serializer";
-
-
-
-                SerializerBuilder serializerBuilder = new SerializerBuilder();
-
-                serializerBuilder.append("package ").append(packageName).append(";\n\n");
-
-                serializerBuilder.append("public final class ").append(generatedClassName).append(" {\n");
-
-                String fullClass = element.asType().toString();
-
-                String varName = className.substring(0, 1).toLowerCase() + className.substring(1);
-
-                serializerBuilder.append("    public static void serialize(").append(fullClass).append(" ").append(varName).append(", com.jummania.writer.Writer writer) throws java.io.IOException {\n");
-
-
-
-                // ফিল্ডগুলো লুপ করে স্ট্রিং বিল্ড করা
-
-                serializerBuilder.write(element, code, varName);
-
-
-
-                code.append("    }\n");
-
-                code.append("}\n");
-
-
-
-                // Filer দিয়ে ফিজিক্যাল ফাইল রাইট করা
-
-                try {
-
-                    JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(packageName + "." + generatedClassName);
-
-                    try (Writer writer = builderFile.openWriter()) {
-
-                        writer.write(code.toString());
-
-                    }
-
-                } catch (IOException e) {
-
-                    throw new RuntimeException(e);
-
-                }
-
-            }
-
-        }
-
-         */
-
-
-
         return true;
     }
 
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
+        return Collections.singleton("com.jummania.Serializable");
+    }
+
+    @Override
+    public Set<String> getSupportedOptions() {
+        return Collections.singleton("org.gradle.annotation.processing.isolating");
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.RELEASE_17;
+    }
 }

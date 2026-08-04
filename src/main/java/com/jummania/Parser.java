@@ -189,9 +189,9 @@ public final class Parser {
     @Serializable
     public static class Department {
 
-        private int id;
-        public String name;
-        public boolean active;
+        int id;
+        String name;
+        boolean active;
     }
 
 
