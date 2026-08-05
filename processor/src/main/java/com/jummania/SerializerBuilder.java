@@ -12,18 +12,14 @@ import java.util.Set;
 import static com.jummania.Utils.*;
 
 class SerializerBuilder {
-    Set<String> types = new HashSet<>();
-    StringBuilder builder = new StringBuilder();
-    int i = 0;
-    Set<String> names = new HashSet<>();
-    int packSize;
+    private final Set<String> types;
+    private final Set<String> names = new HashSet<>();
+    private final StringBuilder builder;
+    private int i = 0;
 
-    StringBuilder append(String string) {
-        return builder.append(string);
-    }
-
-    void addImport(String string) {
-        types.add(string);
+    SerializerBuilder(StringBuilder stringBuilder, Set<String> types) {
+        this.builder = stringBuilder;
+        this.types = types;
     }
 
     void write(ProcessingEnvironment processingEnv, TypeElement element, String parentAccessor, int spaceCount) {
@@ -249,20 +245,6 @@ class SerializerBuilder {
         }
 
         return false;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder importBuilder = new StringBuilder(types.size() * 9);
-        types.stream().sorted().forEach(type -> importBuilder.append("import ").append(type).append(";\n"));
-
-        importBuilder.append("\n");
-        builder.insert(packSize, importBuilder);
-        String result = builder.toString();
-
-        builder.setLength(0);
-        types = new HashSet<>(types.size());
-        return result;
     }
 
     private String getFieldName(String fieldName) {

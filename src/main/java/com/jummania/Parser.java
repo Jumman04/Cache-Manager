@@ -192,6 +192,13 @@ public final class Parser {
         int id;
         String name;
         boolean active;
+
+        Department() {
+        }
+
+        Department(int id, String name, boolean active) {
+
+        }
     }
 
 

@@ -9,14 +9,16 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 import static com.jummania.Utils.annotatedClassNames;
 
 public class MyProcessor extends AbstractProcessor {
 
-    SerializerBuilder serializerBuilder = new SerializerBuilder();
+    StringBuilder stringBuilder = new StringBuilder();
+    private Set<String> types = new HashSet<>();
+    SerializerBuilder serializerBuilder = new SerializerBuilder(stringBuilder, types);
+    DeSerializer deSerializer = new DeSerializer(stringBuilder, types);
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -28,33 +30,45 @@ public class MyProcessor extends AbstractProcessor {
             }
         }
 
+        int packSize;
+
+        List<String> imports = new ArrayList<>(3);
+
+        imports.add("com.jummania.writer.Writer");
+        imports.add("com.jummania.reader.Reader");
+        imports.add("java.io.IOException");
+
         for (Element element : elements) {
 
             if (element.getKind() == ElementKind.CLASS) {
 
                 String packageName = processingEnv.getElementUtils().getPackageOf(element).getQualifiedName().toString();
-                serializerBuilder.addImport("com.jummania.writer.Writer");
-                serializerBuilder.addImport("java.io.IOException");
-                serializerBuilder.packSize = serializerBuilder.append("package ").append(packageName).append(";\n\n").length();
+                types.addAll(imports);
+                packSize = stringBuilder.append("package ").append(packageName).append(";\n\n").length();
                 String className = element.getSimpleName().toString();
                 String targetClassName = className + "_";
-                serializerBuilder.append("\npublic final class ").append(targetClassName).append(" {\n\n");
+                stringBuilder.append("\npublic final class ").append(targetClassName).append(" {\n\n");
 
-                serializerBuilder.addImport(element.asType().toString());
+                types.add(element.asType().toString());
                 String varName = className.substring(0, 1).toLowerCase() + className.substring(1);
 
-                serializerBuilder.append("    public static void serialize(").append(className).append(" ").append(varName).append(", Writer writer) throws IOException {\n");
+                stringBuilder.append("    public static void serialize(").append(className).append(" ").append(varName).append(", Writer writer) throws IOException {\n");
 
-                serializerBuilder.write(processingEnv, (TypeElement) element, varName, 1);
+                TypeElement typeElement = (TypeElement) element;
+                serializerBuilder.write(processingEnv, typeElement, varName, 1);
 
-                serializerBuilder.append("    }\n\n");
+                stringBuilder.append("    }\n\n");
 
-                serializerBuilder.append("}\n");
+                stringBuilder.append("   public static ").append("void").append(" deSerializer(").append("Reader reader) throws IOException {\n");
+                deSerializer.write(processingEnv, typeElement, varName, 1);
+
+                stringBuilder.append("    }\n\n");
+                stringBuilder.append("}\n");
 
                 try {
                     JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(packageName + "." + targetClassName, element);
                     try (Writer writer = builderFile.openWriter()) {
-                        writer.write(serializerBuilder.toString());
+                        writer.write(toString(packSize));
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -78,5 +92,19 @@ public class MyProcessor extends AbstractProcessor {
     @Override
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.RELEASE_17;
+    }
+
+
+    private String toString(int packSize) {
+        StringBuilder importBuilder = new StringBuilder(types.size() * 9);
+        types.stream().sorted().forEach(type -> importBuilder.append("import ").append(type).append(";\n"));
+
+        importBuilder.append("\n");
+        stringBuilder.insert(packSize, importBuilder);
+        String result = stringBuilder.toString();
+
+        stringBuilder.setLength(0);
+        types = new HashSet<>(types.size());
+        return result;
     }
 }
