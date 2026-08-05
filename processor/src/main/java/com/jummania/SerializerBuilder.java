@@ -112,6 +112,11 @@ class SerializerBuilder {
                 builder.append(");\n");
                 return true;
             }
+
+            case "byte[]", "[B" -> {
+                builder.append(space).append("writer.writeBytes(").append(fieldName).append(");\n");
+                return true;
+            }
             case "java.lang.String" -> {
                 builder.append(space).append("writer.writeString(").append(fieldName).append(");\n");
                 return true;

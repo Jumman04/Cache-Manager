@@ -57,8 +57,12 @@ public final class StreamByteWriter implements Writer, Closeable, Flushable {
 
     @Override
     public void writeBytes(byte[] bytes) throws IOException {
-        out.write(bytes.length);
-        out.write(bytes);
+        if (bytes == null) {
+            out.write(0);
+        } else {
+            out.write(bytes.length);
+            out.write(bytes);
+        }
     }
 
     @Override

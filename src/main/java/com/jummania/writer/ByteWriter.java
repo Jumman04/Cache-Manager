@@ -103,6 +103,11 @@ public final class ByteWriter implements Writer {
     @Override
     public void writeBytes(byte[] bytes) {
 
+        if (bytes == null) {
+            writeInt(0);
+            return;
+        }
+
         int length = bytes.length;
 
         ensureCapacity(length + 4);

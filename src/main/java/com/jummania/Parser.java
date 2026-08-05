@@ -189,6 +189,7 @@ public final class Parser {
     @Serializable
     public static class Department {
 
+        byte[] bytes = null;
         int id;
         String name;
         boolean active;
