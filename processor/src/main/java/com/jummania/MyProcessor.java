@@ -16,7 +16,7 @@ import static com.jummania.Utils.annotatedClassNames;
 public class MyProcessor extends AbstractProcessor {
 
     StringBuilder stringBuilder = new StringBuilder();
-    private Set<String> types = new HashSet<>();
+    private final Set<String> types = new HashSet<>();
     SerializerBuilder serializerBuilder = new SerializerBuilder(stringBuilder, types);
     DeSerializer deSerializer = new DeSerializer(stringBuilder, types);
 
@@ -104,7 +104,7 @@ public class MyProcessor extends AbstractProcessor {
         String result = stringBuilder.toString();
 
         stringBuilder.setLength(0);
-        types = new HashSet<>(types.size());
+        types.clear();
         return result;
     }
 }

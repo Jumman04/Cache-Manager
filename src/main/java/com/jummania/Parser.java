@@ -3,6 +3,7 @@ package com.jummania;
 import com.jummania.writer.ByteWriter;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -189,7 +190,9 @@ public final class Parser {
     @Serializable
     public static class Department {
 
-        byte[] bytes = null;
+        List<Integer> list = new LinkedList<>();
+
+        String[] bytes = null;
         int id;
         String name;
         boolean active;
@@ -203,23 +206,9 @@ public final class Parser {
     }
 
 
-    // @Serializable
+    @Serializable
     public class TT {
 
-        UserProfile[] userProfile;
-
-        //Iterable<String> itemListener;
-        // ১. মাল্টি-লেভেল নেস্টেড লিস্ট ও ম্যাপের কম্বিনেশন
-        List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
-
-        // ২. অ্যারে এবং নেস্টেড ম্যাপ
-        Map<String, String[]>[] mapArrayField;
-
-        // ৩. থ্রি-ডি বা ডিপ নেস্টেড লিস্ট
-        List<List<List<Integer>>> deepListField;
-
-        // ৪. কাস্টম অবজেক্ট নেস্টিং (যদি আপনার সিস্টেমে কাস্টম ক্লাস হ্যান্ডলিং থাকে)
-        Map<String, UserProfile> userProfileMap;
 
 
         //   Company company;
