@@ -39,67 +39,72 @@ class DeSerializer {
         }
     }
 
-    boolean readPrimitive(boolean justRead, String fieldName, String fieldType, String space) {
+    String readPrimitive(String fieldType) {
+        return switch (fieldType) {
+            case "int", "java.lang.Integer" -> "reader.readInt()";
+            case "long", "java.lang.Long" -> "reader.readLong()";
+            case "short", "java.lang.Short" -> "reader.readShort()";
+            case "byte", "java.lang.Byte" -> "reader.readByte()";
+            case "char", "java.lang.Character" -> "reader.readChar()";
+            case "boolean", "java.lang.Boolean" -> "reader.readBoolean()";
+            case "float", "java.lang.Float" -> "reader.readFloat()";
+            case "double", "java.lang.Double" -> "reader.readDouble()";
+            case "byte[]", "[B" -> "reader.readBytes()";
+            case "java.lang.String" -> "reader.readString()";
+            default -> null;
+        };
+    }
+
+    boolean readPrimitive(String fieldName, String fieldType, String space) {
         switch (fieldType) {
             case "int", "java.lang.Integer" -> {
-                String read = "reader.readInt()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("int ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readInt();";
+                builder.append(space).append("int ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "long", "java.lang.Long" -> {
-                String read = "reader.readLong()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("long ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readLong();";
+                builder.append(space).append("long ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "short", "java.lang.Short" -> {
-                String read = "reader.readShort()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("short ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readShort();";
+                builder.append(space).append("short ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "byte", "java.lang.Byte" -> {
-                String read = "reader.readByte()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("byte ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readByte();";
+                builder.append(space).append("byte ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "char", "java.lang.Character" -> {
-                String read = "reader.readChar()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("char ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readChar();";
+                builder.append(space).append("char ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "boolean", "java.lang.Boolean" -> {
-                String read = "reader.readBoolean()";
-                if (justRead) builder.append(read);
-                else
-                    builder.append(space).append("boolean ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readBoolean();";
+                builder.append(space).append("boolean ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "float", "java.lang.Float" -> {
-                String read = "reader.readFloat()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("float ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readFloat();";
+                builder.append(space).append("float ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "double", "java.lang.Double" -> {
-                String read = "reader.readDouble()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("double ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readDouble();";
+                builder.append(space).append("double ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "byte[]", "[B" -> {
-                String read = "reader.readBytes()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("byte[] ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readBytes();";
+                builder.append(space).append("byte[] ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
             case "java.lang.String" -> {
-                String read = "reader.readString()";
-                if (justRead) builder.append(read);
-                else builder.append(space).append("String ").append(fieldName).append(" = ").append(read).append(";\n");
+                String read = "reader.readString();";
+                builder.append(space).append("String ").append(fieldName).append(" = ").append(read).append("\n");
                 return true;
             }
         }
@@ -129,13 +134,17 @@ class DeSerializer {
         } else builder.append(" ArrayList(reader.readInt());\n");
 
         builder.append(doubleSpace).append("for (int i = 0; i < ").append(fieldName).append(isArray ? ".length" : ".size()").append("; i++) {\n");
-        builder.append(fieldName);
-        if (isArray) builder.append("[i] = ");
-        else builder.append(".add(");
-        if (!readPrimitive(true, fieldName, componentType, space)) {
+        String readPrimitive = readPrimitive(componentType);
+
+        if (readPrimitive == null) {
             if (!writeAny(componentTypeMirror, processingEnv, null, fieldName, componentType, spaceCount + 1)) {
                 throw new RuntimeException("Unknown component type for reading: " + componentType);
             }
+        } else {
+            builder.append(fieldName);
+            if (isArray) builder.append("[i] = ");
+            else builder.append(".add(");
+            builder.append(readPrimitive);
         }
 
         builder.append(isArray ? ";\n" : ");\n");
@@ -175,6 +184,7 @@ class DeSerializer {
         types.add("java.util.Map.Entry");
         builder.append(doubleSpace).append("for (Entry<").append(normalKey).append(", ").append(normalVal).append("> ").append(entryVar).append(" : ").append(fieldName).append(".entrySet()) {\n");
 
+        /*
         if (!readPrimitive(false, entryVar + ".getKey()", keyType, tripleSpace)) {
             builder.append(tripleSpace).append(normalKey).append(" ").append(keyVar).append(" = ").append(entryVar).append(".getKey();\n");
             if (!writeAny(keyTypeMirror, processingEnv, null, keyVar, keyType, spaceCount)) {
@@ -189,6 +199,8 @@ class DeSerializer {
             }
         }
 
+         */
+
         builder.append(doubleSpace).append("}\n");
         builder.append(space).append("}\n");
     }
@@ -200,7 +212,7 @@ class DeSerializer {
 
         String space = space(++spaceCount);
 
-        if (readPrimitive(false, fieldName, fieldType, space)) return true;
+        if (readPrimitive(fieldName, fieldType, space)) return true;
 
         String className = null;
 

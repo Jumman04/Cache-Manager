@@ -3,7 +3,6 @@ package com.jummania;
 import com.jummania.writer.ByteWriter;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -190,9 +189,9 @@ public final class Parser {
     @Serializable
     public static class Department {
 
-        List<Department> list = new LinkedList<>();
+        //  List<Department> list = new LinkedList<>();
 
-        String[] bytes = null;
+        List<Company> bytes = null;
         int id;
         String name;
         boolean active;
