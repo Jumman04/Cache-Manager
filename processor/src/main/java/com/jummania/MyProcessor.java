@@ -54,7 +54,7 @@ public class MyProcessor extends AbstractProcessor {
 
                 stringBuilder.append("    public static void serialize(").append(className).append(" ").append(varName).append(", Writer writer) throws IOException {\n");
                 stringBuilder.append("        if (").append(varName).append(" == null) writer.writeByte((byte) 0);\n").append("        else {\n");
-                stringBuilder.append("            writer.writeByte((byte) 1);");
+                stringBuilder.append("            writer.writeByte((byte) 1);\n");
                 TypeElement typeElement = (TypeElement) element;
                 serializerBuilder.write(processingEnv, typeElement, varName, 2);
 
@@ -62,7 +62,7 @@ public class MyProcessor extends AbstractProcessor {
                 stringBuilder.append("    }\n\n");
 
                 stringBuilder.append("    public static ").append("void").append(" deSerializer(").append("Reader reader) throws IOException {\n");
-                deSerializer.write(processingEnv, typeElement, varName, 1);
+                deSerializer.read(processingEnv, typeElement, varName, 1);
 
                 stringBuilder.append("    }\n\n");
                 stringBuilder.append("}\n");

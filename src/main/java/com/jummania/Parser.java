@@ -190,7 +190,7 @@ public final class Parser {
     @Serializable
     public static class Department {
 
-        List<Integer> list = new LinkedList<>();
+        List<Department> list = new LinkedList<>();
 
         String[] bytes = null;
         int id;
@@ -206,7 +206,7 @@ public final class Parser {
     }
 
 
-    @Serializable
+    //   @Serializable
     public class TT {
 
 
