@@ -210,15 +210,28 @@ public final class Parser {
     public class TT {
 
 
+        UserProfile[] userProfile;
 
-        //   Company company;
+        //Iterable<String> itemListener;
+        // ১. মাল্টি-লেভেল নেস্টেড লিস্ট ও ম্যাপের কম্বিনেশন
+        List<Map<String, List<Map<Integer, Company>>>> complexNestedField;
+
+        // ২. অ্যারে এবং নেস্টেড ম্যাপ
+        Map<String, String[]>[] mapArrayField;
+
+        // ৩. থ্রি-ডি বা ডিপ নেস্টেড লিস্ট
+        List<List<List<Integer>>> deepListField;
+
+        // ৪. কাস্টম অবজেক্ট নেস্টিং (যদি আপনার সিস্টেমে কাস্টম ক্লাস হ্যান্ডলিং থাকে)
+        Map<String, UserProfile> userProfileMap;
+
 
         public static class UserProfile {
-            String title;
-            String[] arrayId;
             public String username;
             public List<String> tags;
             public Map<String, Integer> metadata;
+            String title;
+            String[] arrayId;
         }
     }
 

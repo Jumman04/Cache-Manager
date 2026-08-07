@@ -119,7 +119,7 @@ class SerializerBuilder {
         return false;
     }
 
-    void writeArray(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String fieldName, String explicitComponentType, int spaceCount, boolean needWrite) {
+    void writeArray(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String fieldName, String explicitComponentType, int spaceCount) {
         String componentType;
         TypeMirror componentTypeMirror;
 
@@ -132,23 +132,24 @@ class SerializerBuilder {
             componentType = componentTypeMirror != null ? componentTypeMirror.toString() : "java.lang.Object";
         }
 
-        String space = space(spaceCount);
+        String space = space(spaceCount++);
+        String doubleSpace = space(spaceCount);
 
-        if (needWrite) {
-            writeCheck(fieldName, space(3), explicitComponentType != null);
-        }
+        writeCheck(fieldName, false, explicitComponentType != null, space, doubleSpace);
 
         String itemVar = getFieldName(fieldName);
-        builder.append(space).append("for (").append(getNormalizedTypeName(componentTypeMirror)).append(" ").append(itemVar).append(" : ").append(fieldName).append(") {\n");
+        builder.append(doubleSpace).append("for (").append(getNormalizedTypeName(componentTypeMirror)).append(" ").append(itemVar).append(" : ").append(fieldName).append(") {\n");
 
         if (!writeAny(componentTypeMirror, processingEnv, null, itemVar, componentType, spaceCount)) {
             throw new RuntimeException("Unknown component type: " + componentType);
         }
 
+        builder.append(doubleSpace).append("}\n");
         builder.append(space).append("}\n");
+
     }
 
-    void writeMap(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String fieldName, int spaceCount, boolean needWrite) {
+    void writeMap(TypeMirror typeMirror, ProcessingEnvironment processingEnv, String fieldName, int spaceCount) {
         TypeMirror[] typeArgs = getTypeArguments(typeMirror);
 
         TypeMirror keyTypeMirror = typeArgs[0];
@@ -170,9 +171,7 @@ class SerializerBuilder {
         String doubleSpace = space(spaceCount);
         String tripleSpace = space(spaceCount + 1);
 
-        if (needWrite) {
-            writeCheck(fieldName, tripleSpace, false);
-        }
+        writeCheck(fieldName, false, false, space, doubleSpace);
 
         types.add("java.util.Map.Entry");
         builder.append(doubleSpace).append("for (Entry<").append(normalKey).append(", ").append(normalVal).append("> ").append(entryVar).append(" : ").append(fieldName).append(".entrySet()) {\n");
@@ -201,59 +200,56 @@ class SerializerBuilder {
         else currentAccessor = currentAccessor + "." + fieldName;
 
         String space = space(++spaceCount);
-        String tripleSpace = space(spaceCount + 1);
 
         if (writePrimitive(currentAccessor, fieldType, space)) return true;
 
         String className = null;
 
-        boolean needWrite = !names.contains(fieldName);
-        if (needWrite) {
+        if (!names.contains(fieldName)) {
             fieldName = fieldName + i++;
             names.add(fieldName);
-            if (builder.charAt(builder.length() - 2) != '{') builder.append("\n");
+            builder.append("\n");
             className = getNormalizedTypeName(typeMirror);
             builder.append(space).append(className).append(" ").append(fieldName).append(" = ").append(currentAccessor).append(";\n");
-            builder.append(space).append("if (").append(fieldName).append(" == null) {\n").append(tripleSpace);
-
         }
+
+        builder.append(space).append("if (").append(fieldName).append(" == null) ");
 
         if (isArray(typeMirror, fieldType)) {
             ArrayType arrayType = (ArrayType) typeMirror;
             TypeMirror componentTypeMirror = arrayType.getComponentType();
             String componentType = componentTypeMirror.toString();
 
-            writeArray(componentTypeMirror, processingEnv, fieldName, componentType, spaceCount, needWrite);
+            writeArray(componentTypeMirror, processingEnv, fieldName, componentType, spaceCount);
             return true;
         }
 
         if (isMap(processingEnv, typeMirror, fieldType)) {
-            writeMap(typeMirror, processingEnv, fieldName, spaceCount, needWrite);
+            writeMap(typeMirror, processingEnv, fieldName, spaceCount);
             return true;
         }
 
         if (isCollection(processingEnv, typeMirror, fieldType)) {
-            writeArray(typeMirror, processingEnv, fieldName, null, spaceCount, needWrite);
+            writeArray(typeMirror, processingEnv, fieldName, null, spaceCount);
             return true;
         }
 
         if (hasClass(fieldType)) {
-            if (needWrite) {
-                builder.append("writer.writeByte((byte) 0);\n").append(tripleSpace).append("return;\n").append(space).append("}\n");
-                builder.append(space).append("writer.writeByte((byte) 1);\n");
-            }
+            String doubleSpace;
+            doubleSpace = space(spaceCount + 1);
+            writeCheck(fieldName, true, false, space, doubleSpace);
             if (className == null) className = getNormalizedTypeName(typeMirror);
-            builder.append(space).append(className).append("_.").append("serialize(").append(fieldName).append(", writer);\n");
+            builder.append(doubleSpace).append(className).append("_.").append("serialize(").append(fieldName).append(", writer);\n");
+
+            builder.append(space).append("}\n");
             return true;
         }
 
         TypeElement element = getNestedTypeElement(processingEnv, fieldType);
         if (element != null) {
-            if (needWrite) {
-                builder.append("writer.writeByte((byte) 0);\n").append(tripleSpace).append("return;\n").append(space).append("}\n");
-                builder.append(space).append("writer.writeByte((byte) 1);\n");
-            }
-            write(processingEnv, element, fieldName, --spaceCount);
+            writeCheck(fieldName, true, false, space, space(spaceCount + 1));
+            write(processingEnv, element, fieldName, spaceCount);
+            builder.append(space).append("}\n");
             return true;
         }
 
@@ -309,8 +305,11 @@ class SerializerBuilder {
         }
     }
 
-    private void writeCheck(String fieldName, String space, boolean isArray) {
-        builder.append("writer.writeInt(0);\n").append(space).append("return;\n").append(space).append("}\n");
-        builder.append(space).append("writer.writeInt(").append(fieldName).append(isArray ? "lenths" : ".size()").append(");\n");
+    private void writeCheck(String fieldName, boolean isOvject, boolean isArray, String singleSpace, String doubleSpace) {
+        String write = isOvject ? "Byte((byte) " : "Int(";
+        builder.append("writer.write").append(write).append("0);\n");
+        builder.append(singleSpace).append("else {\n").append(doubleSpace).append("writer.write").append(write);
+        if (!isOvject) builder.append(fieldName);
+        builder.append(isOvject ? "1" : isArray ? ".length" : ".size()").append(");\n");
     }
 }

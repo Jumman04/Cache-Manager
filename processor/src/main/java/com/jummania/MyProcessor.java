@@ -15,8 +15,8 @@ import static com.jummania.Utils.annotatedClassNames;
 
 public class MyProcessor extends AbstractProcessor {
 
-    StringBuilder stringBuilder = new StringBuilder();
     private final Set<String> types = new HashSet<>();
+    StringBuilder stringBuilder = new StringBuilder();
     SerializerBuilder serializerBuilder = new SerializerBuilder(stringBuilder, types);
     DeSerializer deSerializer = new DeSerializer(stringBuilder, types);
 
@@ -53,13 +53,15 @@ public class MyProcessor extends AbstractProcessor {
                 String varName = className.substring(0, 1).toLowerCase() + className.substring(1);
 
                 stringBuilder.append("    public static void serialize(").append(className).append(" ").append(varName).append(", Writer writer) throws IOException {\n");
-
+                stringBuilder.append("        if (").append(varName).append(" == null) writer.writeByte((byte) 0);\n").append("        else {\n");
+                stringBuilder.append("            writer.writeByte((byte) 1);");
                 TypeElement typeElement = (TypeElement) element;
-                serializerBuilder.write(processingEnv, typeElement, varName, 1);
+                serializerBuilder.write(processingEnv, typeElement, varName, 2);
 
+                stringBuilder.append("        }\n\n");
                 stringBuilder.append("    }\n\n");
 
-                stringBuilder.append("   public static ").append("void").append(" deSerializer(").append("Reader reader) throws IOException {\n");
+                stringBuilder.append("    public static ").append("void").append(" deSerializer(").append("Reader reader) throws IOException {\n");
                 deSerializer.write(processingEnv, typeElement, varName, 1);
 
                 stringBuilder.append("    }\n\n");
